@@ -27,7 +27,8 @@ export type UserRole =
   | "Verification Officer"
   | "Supervisor"
   | "GIS Officer"
-  | "Auditor";
+  | "Auditor"
+  | "Citizen / Land Owner";
 
 /** Exact backend role key from MongoDB roles collection */
 export type SystemRole =
@@ -36,7 +37,8 @@ export type SystemRole =
   | "district_admin"
   | "tehsil_officer"
   | "verification_officer"
-  | "auditor";
+  | "auditor"
+  | "citizen";
 
 export interface AppUser {
   id: string;

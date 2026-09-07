@@ -52,6 +52,9 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
         "VIEW_AUDIT",
         "EXPORT_DATA",
     ],
+    "citizen": [
+        "VIEW_RECORD",
+    ],
 }
 
 

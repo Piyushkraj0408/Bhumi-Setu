@@ -10,6 +10,7 @@ from app.schemas.auth import (
     RefreshRequest,
     UserOut,
     UserCreateRequest,
+    SignupRequest,
     CurrentUserOut,
     RoleAssignmentOut,
 )
@@ -145,3 +146,29 @@ def register(payload: UserCreateRequest, db: Database = Depends(get_db)):
         scope_id=payload.scope_id,
     )
     return user
+
+
+ALLOWED_PUBLIC_SIGNUP_ROLES = {"citizen", "tehsil_officer", "verification_officer", "auditor"}
+
+
+@router.post(
+    "/signup",
+    response_model=TokenResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Public User Signup",
+)
+def signup(payload: SignupRequest, db: Database = Depends(get_db)):
+    """Allows new users / consumers to self-register and immediately receive authentication tokens."""
+    role = payload.role_name if payload.role_name in ALLOWED_PUBLIC_SIGNUP_ROLES else "citizen"
+    user = auth_service.create_user(
+        db,
+        email=payload.email,
+        password=payload.password,
+        name=payload.name,
+        role_name=role,
+        scope_type=payload.scope_type,
+        scope_id=payload.scope_id,
+    )
+    access_token, refresh_token = auth_service.issue_tokens(db, user)
+    return TokenResponse(access_token=access_token, refresh_token=refresh_token)
+

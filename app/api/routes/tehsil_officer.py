@@ -797,9 +797,7 @@ def approve_master_record(
     summary="View Master Land Records",
     dependencies=[
         Depends(
-            require_roles(
-                ["tehsil_officer", "super_admin"]
-            )
+            require_permission("VIEW_RECORD")
         )
     ],
 )

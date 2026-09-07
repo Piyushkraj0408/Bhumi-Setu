@@ -37,15 +37,90 @@ ROLE_PERMISSIONS = {
     ],
     "verification_officer": ["VIEW_RECORD", "VERIFY_RECORD"],
     "auditor": ["VIEW_RECORD", "VIEW_AUDIT", "EXPORT_DATA"],
+    "citizen": ["VIEW_RECORD"],
 }
 
 DEFAULT_TEST_USERS = [
+    ("citizen@gov.in", "Citizen123!", "Ramesh Patil (Land Owner)", "citizen", None, None),
     ("superadmin@gov.in", "AdminPassword123!", "Super Administrator", "super_admin", None, None),
     ("stateadmin@gov.in", "StateAdmin123!", "State Land Director", "state_admin", "state", "ST-MAHA"),
     ("districtadmin@gov.in", "DistrictAdmin123!", "District Collector Pune", "district_admin", "district", "D-PUNE"),
     ("tehsilofficer@gov.in", "TehsilOfficer123!", "Tehsildar Haveli", "tehsil_officer", "tehsil", "TH-HAVELI"),
     ("verifier@gov.in", "Verifier123!", "Land Record Verifier", "verification_officer", "tehsil", "TH-HAVELI"),
     ("auditor@gov.in", "Auditor123!", "Vigilance Auditor", "auditor", None, None),
+]
+
+SAMPLE_MASTER_RECORDS = [
+    {
+        "record_id": "LR-2024-1",
+        "document_id": "doc-sample-1",
+        "khasra_number": "42/1",
+        "khata_number": "108",
+        "owner_name": "Ramesh Patil",
+        "father_or_husband_name": "Ganpat Patil",
+        "village": "Haveli",
+        "tehsil": "Haveli",
+        "district": "Pune",
+        "total_area_sq_meters": 9914.8,
+        "status": "approved",
+        "tehsil_code": "TH-HAVELI",
+    },
+    {
+        "record_id": "LR-2024-2",
+        "document_id": "doc-sample-2",
+        "khasra_number": "108/B",
+        "khata_number": "214",
+        "owner_name": "Anand Rao",
+        "father_or_husband_name": "Venkatesh Rao",
+        "village": "Wagholi",
+        "tehsil": "Haveli",
+        "district": "Pune",
+        "total_area_sq_meters": 7284.3,
+        "status": "approved",
+        "tehsil_code": "TH-HAVELI",
+    },
+    {
+        "record_id": "LR-2024-3",
+        "document_id": "doc-sample-3",
+        "khasra_number": "77/3",
+        "khata_number": "92",
+        "owner_name": "Suresh Patil",
+        "father_or_husband_name": "Ramchandra Patil",
+        "village": "Hinjewadi",
+        "tehsil": "Mulshi",
+        "district": "Pune",
+        "total_area_sq_meters": 16673.1,
+        "status": "approved",
+        "tehsil_code": "TH-MULSHI",
+    },
+    {
+        "record_id": "LR-2024-4",
+        "document_id": "doc-sample-4",
+        "khasra_number": "15/2",
+        "khata_number": "55",
+        "owner_name": "Sunita Sharma",
+        "father_or_husband_name": "Omprakash Sharma",
+        "village": "Kothrud",
+        "tehsil": "Haveli",
+        "district": "Pune",
+        "total_area_sq_meters": 4046.86,
+        "status": "approved",
+        "tehsil_code": "TH-HAVELI",
+    },
+    {
+        "record_id": "LR-2024-5",
+        "document_id": "doc-sample-5",
+        "khasra_number": "91/A",
+        "khata_number": "301",
+        "owner_name": "Pooja Deshmukh",
+        "father_or_husband_name": "Pratap Deshmukh",
+        "village": "Shivajinagar",
+        "tehsil": "Haveli",
+        "district": "Pune",
+        "total_area_sq_meters": 8093.72,
+        "status": "approved",
+        "tehsil_code": "TH-HAVELI",
+    },
 ]
 
 
@@ -96,6 +171,20 @@ def seed():
                 print(f" -> Created user: {email} ({role_name})")
             else:
                 print(f" -> User exists: {email}")
+
+        print("\n[5/5] Seeding verified master land records...")
+        from datetime import datetime, timezone
+        now_dt = datetime.now(timezone.utc)
+        for r in SAMPLE_MASTER_RECORDS:
+            r_doc = r.copy()
+            r_doc["created_at"] = now_dt
+            r_doc["last_updated"] = now_dt
+            db.master_records.update_one(
+                {"record_id": r["record_id"]},
+                {"$set": r_doc},
+                upsert=True,
+            )
+            print(f" -> Master record synced: {r['record_id']} (Khasra {r['khasra_number']} - {r['owner_name']})")
 
         print("\nSUCCESS: MongoDB Database Seeded Successfully!")
 

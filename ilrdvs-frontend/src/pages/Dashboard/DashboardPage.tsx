@@ -12,6 +12,14 @@ import {
   ScanText,
   Sparkles,
   UserCheck,
+  Search,
+  Landmark,
+  FileText,
+  ArrowRight,
+  ShieldCheck,
+  Map,
+  DownloadCloud,
+  BadgeCheck,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -30,7 +38,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { KPICard } from "../../components/cards/KPICard";
 import { ChartCard } from "../../components/cards/ChartCard";
-import { Card } from "../../components/ui/Card";
+import { Card, CardBody } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { getStateProgress } from "../../services/analytics.service";
 import { listVerificationTasks } from "../../services/verification.service";
@@ -38,6 +46,7 @@ import type { StateProgress, VerificationTask } from "../../types";
 import { CURRENT_USER } from "../../data/mockData";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "../../components/ui/Skeleton";
+import { useAuth } from "../../lib/AuthContext";
 
 const TREND_DATA = [
   { day: "Oct 21", uploaded: 1180, processed: 980, validated: 860 },
@@ -57,8 +66,280 @@ const toneDot: Record<string, string> = {
   success: "bg-success-50 text-success-600",
 };
 
+function CitizenDashboard({ userName }: { userName: string }) {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (query.trim()) {
+      localStorage.setItem("bhoomi_last_search_query", query.trim());
+      navigate(`/records?owner=${encodeURIComponent(query.trim())}`);
+    } else {
+      navigate("/records");
+    }
+  };
+
+  const sampleParcels = [
+    {
+      id: "LR-2024-1",
+      khasra: "42/1",
+      khata: "108",
+      village: "Haveli",
+      tehsil: "Haveli",
+      district: "Pune",
+      area: "2.45 Acres",
+      landType: "Agricultural (Jarayat)",
+      status: "Verified & Digitally Signed",
+      owners: "Shri Anand Rao, Smt. Sunita Rao",
+    },
+    {
+      id: "LR-2024-2",
+      khasra: "108/B",
+      khata: "214",
+      village: "Wagholi",
+      tehsil: "Haveli",
+      district: "Pune",
+      area: "1.80 Acres",
+      landType: "Agricultural (Bagayat)",
+      status: "Verified & Digitally Signed",
+      owners: "Shri Rajesh Kumar",
+    },
+    {
+      id: "LR-2024-3",
+      khasra: "77/3",
+      khata: "92",
+      village: "Hinjewadi",
+      tehsil: "Mulshi",
+      district: "Pune",
+      area: "4.12 Acres",
+      landType: "Non-Agricultural (Commercial)",
+      status: "Verified & Digitally Signed",
+      owners: "Shri Suresh Patil",
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Hero Welcome Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-navy-900 via-navy-950 to-emerald-950 p-6 sm:p-8 text-white shadow-xl border border-emerald-900/30">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FF9933] via-white to-[#138808]" />
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-semibold mb-3">
+              <BadgeCheck className="h-3.5 w-3.5" />
+              <span>Consumer Land Portal • DILRMP Verified</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+              Welcome, {userName}
+            </h1>
+            <p className="text-slate-300 text-sm mt-1 max-w-2xl">
+              Access your digital land records, 7/12 & RoR extracts, cadastral maps, and verify ownership titles with instant cryptographic security.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="outline"
+              className="bg-white/10 hover:bg-white/20 text-white border-white/20"
+              icon={<Map className="h-4 w-4" />}
+              onClick={() => navigate("/gis")}
+            >
+              Cadastral Map
+            </Button>
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-950/40"
+              icon={<Search className="h-4 w-4" />}
+              onClick={() => navigate("/records")}
+            >
+              Search All Records
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Search Bar */}
+      <Card className="border border-slate-200 shadow-sm">
+        <CardBody className="p-4 sm:p-6">
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row items-center gap-3">
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search your land record by Survey No., Khasra, Owner Name, or Village…"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all"
+              />
+            </div>
+            <Button type="submit" className="w-full sm:w-auto bg-navy-900 hover:bg-navy-800 text-white" icon={<Search className="h-4 w-4" />}>
+              Search Records
+            </Button>
+          </form>
+        </CardBody>
+      </Card>
+
+      {/* Consumer Quick Services */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div
+          onClick={() => navigate("/records")}
+          className="cursor-pointer group p-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md hover:border-emerald-500/50 transition-all"
+        >
+          <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+            <FileText className="h-5 w-5" />
+          </div>
+          <h3 className="font-bold text-sm text-navy-900 group-hover:text-emerald-700 transition-colors">
+            7/12 & RoR Extracts
+          </h3>
+          <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+            Inspect verified ownership records, survey areas, and agricultural classification.
+          </p>
+          <div className="mt-3 flex items-center text-xs font-semibold text-emerald-700 gap-1">
+            <span>View Records</span>
+            <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </div>
+        </div>
+
+        <div
+          onClick={() => navigate("/gis")}
+          className="cursor-pointer group p-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md hover:border-emerald-500/50 transition-all"
+        >
+          <div className="h-10 w-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+            <Map className="h-5 w-5" />
+          </div>
+          <h3 className="font-bold text-sm text-navy-900 group-hover:text-teal-700 transition-colors">
+            Cadastral GIS Map
+          </h3>
+          <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+            Inspect survey boundaries, plot coordinates, and geo-referenced cadastral maps.
+          </p>
+          <div className="mt-3 flex items-center text-xs font-semibold text-teal-700 gap-1">
+            <span>Open Map</span>
+            <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </div>
+        </div>
+
+        <div
+          onClick={() => navigate("/records")}
+          className="cursor-pointer group p-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md hover:border-emerald-500/50 transition-all"
+        >
+          <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+            <ShieldCheck className="h-5 w-5" />
+          </div>
+          <h3 className="font-bold text-sm text-navy-900 group-hover:text-blue-700 transition-colors">
+            Mutation Tracking
+          </h3>
+          <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+            Track status of sale deeds, inheritance partitions, and title transfers.
+          </p>
+          <div className="mt-3 flex items-center text-xs font-semibold text-blue-700 gap-1">
+            <span>Track Status</span>
+            <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </div>
+        </div>
+
+        <div
+          onClick={() => navigate("/records/LR-2024-1")}
+          className="cursor-pointer group p-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md hover:border-emerald-500/50 transition-all"
+        >
+          <div className="h-10 w-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+            <DownloadCloud className="h-5 w-5" />
+          </div>
+          <h3 className="font-bold text-sm text-navy-900 group-hover:text-amber-700 transition-colors">
+            Certified Copies
+          </h3>
+          <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+            Download digitally signed e-Records with QR verification for loans & legal registry.
+          </p>
+          <div className="mt-3 flex items-center text-xs font-semibold text-amber-700 gap-1">
+            <span>Download Sample</span>
+            <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </div>
+        </div>
+      </div>
+
+      {/* Featured / Available Records Table */}
+      <Card className="border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-5 border-b border-slate-100 flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h2 className="text-base font-bold text-navy-900 flex items-center gap-2">
+              <Landmark className="h-4 w-4 text-emerald-700" />
+              <span>Verified Land Parcels & Sample Records</span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Click any parcel to inspect full RoR extracts, ownership breakdown, mutation history, and GIS map.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => navigate("/records")}>
+            View All Records
+          </Button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200/80">
+              <tr>
+                <th className="py-3 px-4">Khasra / Survey No.</th>
+                <th className="py-3 px-4">Owners</th>
+                <th className="py-3 px-4">Location (Village / Tehsil)</th>
+                <th className="py-3 px-4">Area</th>
+                <th className="py-3 px-4">Land Type</th>
+                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-slate-700">
+              {sampleParcels.map((p) => (
+                <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
+                  <td className="py-3.5 px-4 font-bold text-navy-900">
+                    <span className="bg-slate-100 px-2 py-0.5 rounded text-[11px] font-mono border border-slate-200">
+                      {p.khasra}
+                    </span>
+                    <span className="text-[10px] text-slate-400 block mt-0.5 font-normal">
+                      Khata: {p.khata}
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4 font-medium text-slate-800">{p.owners}</td>
+                  <td className="py-3.5 px-4">
+                    <span className="font-medium text-slate-800">{p.village}</span>, {p.tehsil} ({p.district})
+                  </td>
+                  <td className="py-3.5 px-4 font-medium">{p.area}</td>
+                  <td className="py-3.5 px-4 text-slate-600">{p.landType}</td>
+                  <td className="py-3.5 px-4">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                      <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                      {p.status}
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4 text-right">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300 text-xs"
+                      onClick={() => navigate(`/records/${p.id}`)}
+                    >
+                      View Details
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 export function DashboardPage() {
   const { t } = useTranslation();
+  const { currentUser: authUser } = useAuth();
+  const currentUser = authUser || CURRENT_USER;
+
+  if (currentUser.systemRole === "citizen") {
+    return <CitizenDashboard userName={currentUser.name} />;
+  }
+
   const [states, setStates] = useState<StateProgress[] | null>(null);
   const [tasks, setTasks] = useState<VerificationTask[] | null>(null);
   const navigate = useNavigate();
@@ -68,7 +349,7 @@ export function DashboardPage() {
     listVerificationTasks().then(setTasks);
   }, []);
 
-  const firstName = CURRENT_USER.name.split(" ")[1] ?? CURRENT_USER.name;
+  const firstName = currentUser.name.split(" ")[1] ?? currentUser.name;
   const pending = tasks?.filter((t) => t.status === "pending").length ?? 0;
   const overdue = tasks?.filter((t) => t.flags.includes("overdue")).length ?? 0;
   const highPriority = tasks?.filter((t) => t.priority === "High").length ?? 0;

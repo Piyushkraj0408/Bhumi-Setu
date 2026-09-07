@@ -160,14 +160,14 @@ const NAV: NavGroup[] = [
     label: "GIS",
     tKey: "nav.gis",
     icon: Map,
-    roles: ["super_admin", "state_admin", "district_admin", "tehsil_officer"],
+    roles: ["super_admin", "state_admin", "district_admin", "tehsil_officer", "citizen"],
     children: [
       {
         label: "Cadastral Map",
         tKey: "nav.cadastralMap",
         to: "/gis",
         icon: Map,
-        roles: ["super_admin", "state_admin", "district_admin", "tehsil_officer"],
+        roles: ["super_admin", "state_admin", "district_admin", "tehsil_officer", "citizen"],
       },
       {
         label: "Spatial Validation",

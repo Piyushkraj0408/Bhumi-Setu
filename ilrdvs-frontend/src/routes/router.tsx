@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { AppShell } from "../components/layout/AppShell";
 import { LoginPage } from "../pages/Login/LoginPage";
+import { SignupPage } from "../pages/Signup/SignupPage";
 import { DashboardPage } from "../pages/Dashboard/DashboardPage";
 import { DocumentUploadPage } from "../pages/Documents/DocumentUploadPage";
 import { DocumentManagementPage } from "../pages/Documents/DocumentManagementPage";
@@ -28,6 +29,7 @@ const bc = (items: Array<{ label: string; to?: string }>) => ({ handle: { breadc
 export const router = createBrowserRouter([
   { path: "/", element: <Navigate to="/login" replace /> },
   { path: "/login", element: <LoginPage /> },
+  { path: "/signup", element: <SignupPage /> },
   {
     element: <AppShell />,
     children: [

@@ -58,3 +58,13 @@ class UserCreateRequest(BaseModel):
     scope_type: str | None = None
     scope_id: str | None = None
 
+
+class SignupRequest(BaseModel):
+    email: EmailStr
+    password: str
+    name: str
+    role_name: str = "citizen"
+    scope_type: str | None = None
+    scope_id: str | None = None
+
+
