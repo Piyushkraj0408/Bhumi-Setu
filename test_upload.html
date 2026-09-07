@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Land Records — Document Upload Test</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --surface2: #1f2937;
+      --border:   #30363d;
+      --accent:   #3b82f6;
+      --accent2:  #6366f1;
+      --success:  #22c55e;
+      --error:    #ef4444;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px 80px;
+    }
+
+    header { text-align: center; margin-bottom: 40px; }
+    .logo {
+      display: inline-flex; align-items: center; gap: 10px; margin-bottom: 12px;
+    }
+    .logo-icon {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+    header p  { color: var(--muted); font-size: 14px; margin-top: 6px; }
+
+    .card {
+      width: 100%; max-width: 680px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 32px;
+      margin-bottom: 24px;
+    }
+    .card-title {
+      font-size: 13px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--muted); margin-bottom: 18px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-title::before {
+      content: '';
+      width: 3px; height: 14px;
+      background: linear-gradient(var(--accent), var(--accent2));
+      border-radius: 2px;
+    }
+
+    .field { margin-bottom: 16px; }
+    label  { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--muted); }
+    input[type="text"], input[type="email"], input[type="password"], select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+    }
+    select option { background: var(--surface2); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 10px 20px;
+      border: none; border-radius: 8px;
+      font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all .2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      width: 100%;
+    }
+    .btn-primary:hover { opacity: .9; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(59,130,246,.3); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    #auth-status {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; margin-bottom: 16px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot.green { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    .dot.red   { background: var(--error);   box-shadow: 0 0 6px var(--error); }
+    .dot.grey  { background: var(--muted); }
+
+    #drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 14px;
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .25s;
+      background: rgba(59,130,246,.03);
+    }
+    #drop-zone:hover, #drop-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(59,130,246,.07);
+      box-shadow: 0 0 0 4px rgba(59,130,246,.1);
+    }
+    #drop-zone.drag-over { transform: scale(1.01); }
+    .drop-icon  { font-size: 44px; margin-bottom: 14px; display: block; }
+    .drop-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+    .drop-sub   { font-size: 13px; color: var(--muted); }
+    .drop-sub span { color: var(--accent); font-weight: 500; }
+    #file-input { display: none; }
+
+    #file-list { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+    .file-item {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px;
+      animation: slideIn .2s ease;
+    }
+    @keyframes slideIn { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:translateY(0) } }
+    .file-ext {
+      width: 38px; height: 38px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0;
+      text-transform: uppercase;
+    }
+    .file-info { flex: 1; min-width: 0; }
+    .file-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-size { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .file-remove {
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; font-size: 18px; padding: 0 4px;
+      line-height: 1; transition: color .15s;
+    }
+    .file-remove:hover { color: var(--error); }
+
+    .meta-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    #upload-result { margin-top: 20px; }
+    .result-item {
+      border-radius: 10px; padding: 14px 16px; margin-bottom: 10px;
+      font-size: 13px; line-height: 1.6;
+      border: 1px solid;
+      animation: slideIn .2s ease;
+    }
+    .result-success { background: rgba(34,197,94,.08); border-color: rgba(34,197,94,.3); color: #86efac; }
+    .result-error   { background: rgba(239,68,68,.08);  border-color: rgba(239,68,68,.3);  color: #fca5a5; }
+    .result-label { font-weight: 700; margin-bottom: 4px; }
+    .result-pre {
+      background: var(--bg); border-radius: 6px; padding: 10px;
+      font-family: monospace; font-size: 12px; white-space: pre-wrap;
+      word-break: break-all; margin-top: 8px; color: var(--text);
+      max-height: 200px; overflow-y: auto;
+    }
+
+    .progress-wrap { margin-top: 10px; }
+    .progress-bar  { height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      width: 0%; transition: width .3s; border-radius: 4px;
+    }
+    .progress-text { font-size: 12px; color: var(--muted); margin-top: 5px; }
+
+    .token-display {
+      background: var(--bg); border-radius: 8px; padding: 8px 12px;
+      font-family: monospace; font-size: 11px; color: var(--muted);
+      word-break: break-all; max-height: 60px; overflow-y: auto;
+      border: 1px solid var(--border); margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🗂️</div>
+      <span style="font-size:20px;font-weight:700">Land Records</span>
+    </div>
+    <h1>Document Upload — API Test Console</h1>
+    <p>Drag &amp; drop any file format to test the <code style="color:var(--accent)">/api/v1/documents</code> endpoint</p>
+  </header>
+
+  <!-- Step 1: Server config -->
+  <div class="card">
+    <div class="card-title">1 · API Server</div>
+    <div class="field">
+      <label for="api-base">Base URL</label>
+      <input type="text" id="api-base" value="http://127.0.0.1:8000" placeholder="http://127.0.0.1:8000" />
+    </div>
+  </div>
+
+  <!-- Step 2: Auth -->
+  <div class="card">
+    <div class="card-title">2 · Authenticate</div>
+
+    <div id="auth-status">
+      <span class="dot grey" id="auth-dot"></span>
+      <span id="auth-text">Not logged in</span>
+    </div>
+
+    <div class="meta-row">
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="admin@example.com" />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="••••••••" />
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="login-btn" onclick="doLogin()">🔐 Login &amp; Get Token</button>
+    <div id="token-display" class="token-display" style="display:none"></div>
+  </div>
+
+  <!-- Step 3: Upload -->
+  <div class="card">
+    <div class="card-title">3 · Drag &amp; Drop Upload</div>
+
+    <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <span class="drop-icon">📁</span>
+      <div class="drop-title">Drop files here</div>
+      <div class="drop-sub">Any format accepted &nbsp;·&nbsp; <span>Browse files</span></div>
+      <input type="file" id="file-input" multiple accept="*/*" />
+    </div>
+
+    <div id="file-list"></div>
+
+    <div class="meta-row" style="margin-top:20px">
+      <div class="field">
+        <label for="doc-type">Document Type <em style="font-weight:400;font-size:11px">(optional)</em></label>
+        <select id="doc-type">
+          <option value="">-- select --</option>
+          <option value="deed">Deed</option>
+          <option value="survey_map">Survey Map</option>
+          <option value="mutation">Mutation Record</option>
+          <option value="encumbrance">Encumbrance Certificate</option>
+          <option value="revenue_record">Revenue Record</option>
+          <option value="court_order">Court Order</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="scope-type">Scope Type <em style="font-weight:400;font-size:11px">(optional)</em></label>
+        <select id="scope-type">
+          <option value="">-- select --</option>
+          <option value="state">State</option>
+          <option value="district">District</option>
+          <option value="tehsil">Tehsil</option>
+          <option value="village">Village</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="scope-id">Scope ID <em style="font-weight:400;font-size:11px">(UUID, optional)</em></label>
+      <input type="text" id="scope-id" placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000" />
+    </div>
+
+    <button class="btn btn-primary" id="upload-btn" onclick="uploadFiles()" disabled>
+      ⬆️ Upload Files
+    </button>
+
+    <div id="upload-result"></div>
+  </div>
+
+  <script>
+    let token = null;
+    let selectedFiles = [];
+
+    const base = () => document.getElementById('api-base').value.replace(/\/$/, '');
+    const fmt  = n => n < 1024 ? n + ' B' : n < 1048576 ? (n/1024).toFixed(1)+' KB' : (n/1048576).toFixed(2)+' MB';
+    const ext  = name => (name.includes('.') ? name.split('.').pop() : '?').slice(0, 4).toUpperCase();
+
+    function setAuthStatus(state, msg) {
+      document.getElementById('auth-dot').className = 'dot ' + (state === 'ok' ? 'green' : state === 'err' ? 'red' : 'grey');
+      document.getElementById('auth-text').textContent = msg;
+    }
+
+    async function doLogin() {
+      const btn  = document.getElementById('login-btn');
+      const email = document.getElementById('email').value.trim();
+      const pass  = document.getElementById('password').value;
+      if (!email || !pass) { alert('Enter email and password first.'); return; }
+
+      btn.disabled = true; btn.textContent = 'Logging in…';
+      setAuthStatus('wait', 'Authenticating…');
+      try {
+        const res  = await fetch(`${base()}/api/v1/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password: pass })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+        token = data.access_token;
+        setAuthStatus('ok', `Authenticated as ${email}`);
+        const d = document.getElementById('token-display');
+        d.style.display = 'block';
+        d.textContent = 'Bearer ' + token;
+        refreshBtn();
+      } catch(e) {
+        setAuthStatus('err', 'Failed: ' + e.message);
+      } finally {
+        btn.disabled = false; btn.textContent = '🔐 Login & Get Token';
+      }
+    }
+
+    // Drag & Drop
+    const zone = document.getElementById('drop-zone');
+    zone.addEventListener('dragenter', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', e => { if (!zone.contains(e.relatedTarget)) zone.classList.remove('drag-over'); });
+    zone.addEventListener('drop', e => {
+      e.preventDefault(); zone.classList.remove('drag-over');
+      addFiles(e.dataTransfer.files);
+    });
+
+    document.getElementById('file-input').addEventListener('change', e => addFiles(e.target.files));
+
+    function addFiles(files) {
+      for (const f of files) {
+        if (!selectedFiles.find(x => x.name === f.name && x.size === f.size)) selectedFiles.push(f);
+      }
+      renderList(); refreshBtn();
+    }
+
+    function removeFile(i) { selectedFiles.splice(i, 1); renderList(); refreshBtn(); }
+
+    function renderList() {
+      const list = document.getElementById('file-list');
+      list.innerHTML = '';
+      selectedFiles.forEach((f, i) => {
+        const el = document.createElement('div');
+        el.className = 'file-item';
+        el.innerHTML = `
+          <div class="file-ext">${ext(f.name)}</div>
+          <div class="file-info">
+            <div class="file-name" title="${f.name}">${f.name}</div>
+            <div class="file-size">${fmt(f.size)} &nbsp;·&nbsp; ${f.type || 'application/octet-stream'}</div>
+          </div>
+          <button class="file-remove" onclick="removeFile(${i})">✕</button>
+        `;
+        list.appendChild(el);
+      });
+    }
+
+    function refreshBtn() {
+      document.getElementById('upload-btn').disabled = !(token && selectedFiles.length);
+    }
+
+    async function uploadFiles() {
+      const result = document.getElementById('upload-result');
+      result.innerHTML = '';
+      const btn = document.getElementById('upload-btn');
+      btn.disabled = true; btn.textContent = 'Uploading…';
+
+      const docType   = document.getElementById('doc-type').value;
+      const scopeType = document.getElementById('scope-type').value;
+      const scopeId   = document.getElementById('scope-id').value.trim();
+
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const f = selectedFiles[i];
+
+        const wrap = document.createElement('div');
+        wrap.className = 'result-item result-success';
+        wrap.innerHTML = `
+          <div class="result-label">📤 Uploading: ${f.name}</div>
+          <div class="progress-wrap">
+            <div class="progress-bar"><div class="progress-fill" id="pf${i}"></div></div>
+            <div class="progress-text" id="pt${i}">0%</div>
+          </div>`;
+        result.appendChild(wrap);
+
+        try {
+          const resp = await xhrUpload(f, docType, scopeType, scopeId, i);
+          const json = JSON.parse(resp);
+          wrap.className = 'result-item result-success';
+          wrap.innerHTML = `
+            <div class="result-label">✅ Success: ${f.name}</div>
+            <div class="result-pre">${JSON.stringify(json, null, 2)}</div>`;
+        } catch(e) {
+          wrap.className = 'result-item result-error';
+          wrap.innerHTML = `
+            <div class="result-label">❌ Failed: ${f.name}</div>
+            <div class="result-pre">${e.message}</div>`;
+        }
+      }
+
+      btn.disabled = false; btn.textContent = '⬆️ Upload Files';
+      refreshBtn();
+    }
+
+    function xhrUpload(file, docType, scopeType, scopeId, idx) {
+      return new Promise((resolve, reject) => {
+        const fd = new FormData();
+        fd.append('file', file);
+        if (docType)   fd.append('doc_type',   docType);
+        if (scopeType) fd.append('scope_type', scopeType);
+        if (scopeId)   fd.append('scope_id',   scopeId);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `${base()}/api/v1/documents`);
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+
+        xhr.upload.onprogress = e => {
+          if (e.lengthComputable) {
+            const p = Math.round(e.loaded / e.total * 100);
+            const pf = document.getElementById(`pf${idx}`);
+            const pt = document.getElementById(`pt${idx}`);
+            if (pf) pf.style.width = p + '%';
+            if (pt) pt.textContent = p + '%';
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(xhr.responseText);
+          } else {
+            let msg = xhr.responseText;
+            try { msg = JSON.stringify(JSON.parse(msg), null, 2); } catch(_) {}
+            reject(new Error(`HTTP ${xhr.status}\n\n${msg}`));
+          }
+        };
+        xhr.onerror = () => reject(new Error('Network error — is the API server running?'));
+        xhr.send(fd);
+      });
+    }
+
+    ['email','password'].forEach(id =>
+      document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); })
+    );
+  </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+services:
+  land-record-ocr:
+    build: .
+    ports:
+      - "8001:8000"
+    environment:
+      OCR_ENGINE: tesseract
+      OCR_LANGUAGES: eng+hin
+      OCR_REVIEW_THRESHOLD: "0.70"

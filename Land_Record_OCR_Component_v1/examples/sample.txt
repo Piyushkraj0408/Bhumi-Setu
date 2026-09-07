@@ -1,0 +1,1 @@
+Use a PDF/JPG/JPEG/PNG/TIFF file for the actual OCR pipeline.
