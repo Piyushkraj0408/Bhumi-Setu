@@ -172,3 +172,41 @@ class PublicRecordExtractOut(BaseModel):
     legal_status: str
     verification_badge: bool
     verified_at: datetime
+
+
+# ============================================================
+# BLOCKCHAIN / RECORD REVOCATION SCHEMAS
+# ============================================================
+
+class DeletionRequestCreate(BaseModel):
+    record_id: str
+    reason: str
+
+
+class DeletionApprovalRequest(BaseModel):
+    comments: str | None = None
+
+
+class DeletionRequestOut(BaseModel):
+    request_id: str
+    record_id: str
+    reason: str
+    status: str
+
+    verifier_status: str
+    tehsil_status: str
+    district_status: str
+
+    created_by: str
+    created_at: datetime
+
+    verifier_approved_by: str | None = None
+    verifier_approved_at: datetime | None = None
+
+    tehsil_approved_by: str | None = None
+    tehsil_approved_at: datetime | None = None
+
+    district_approved_by: str | None = None
+    district_approved_at: datetime | None = None
+
+    blockchain_transactions: list[str] = []
