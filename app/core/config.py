@@ -36,9 +36,24 @@ class Settings(BaseSettings):
     ocr_accept_threshold: float = float(
         os.getenv("OCR_ACCEPT_THRESHOLD", "0.90")
     )
+
+    allowed_origins: str = os.getenv(
+        "ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+    )
+
+    @property
+    def cors_origins(self) -> list[str]:
+        origins = [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
+        if "*" in origins:
+            raise ValueError(
+                "Insecure CORS configuration: Wildcard '*' is strictly prohibited in ALLOWED_ORIGINS when allow_credentials=True."
+            )
+        return origins
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 
 settings = Settings()
+
 
 

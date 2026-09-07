@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { Bell, HelpCircle, Search, ChevronDown, LogOut, User, Settings } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Breadcrumb } from "../ui/Breadcrumb";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../lib/AuthContext";
 import { CURRENT_USER } from "../../data/mockData";
+import { LanguageSelector } from "../ui/LanguageSelector";
 
 export function Header({ breadcrumb }: { breadcrumb: Array<{ label: string; to?: string }> }) {
+  const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const navigate = useNavigate();
@@ -26,13 +29,16 @@ export function Header({ breadcrumb }: { breadcrumb: Array<{ label: string; to?:
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
           <input
-            placeholder="Search by owner, survey no., document ID…"
+            placeholder={t("header.searchPlaceholder", "Search by owner, survey no., document ID…")}
             className="w-full rounded-md border border-slate-200 bg-slate-50 pl-8 pr-3 py-1.5 text-xs focus:bg-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none transition-colors"
           />
         </div>
       </div>
 
       <div className="flex-1" />
+
+      {/* Language Switcher */}
+      <LanguageSelector variant="header" />
 
       <button className="p-2 rounded-md text-slate-500 hover:bg-slate-100 hidden sm:inline-flex" aria-label="Help">
         <HelpCircle className="h-4.5 w-4.5" />

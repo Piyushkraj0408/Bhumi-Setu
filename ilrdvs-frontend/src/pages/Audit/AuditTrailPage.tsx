@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Card } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { listAuditLog } from "../../services/audit.service";
@@ -8,6 +9,7 @@ import { formatDateTime } from "../../utils/format";
 import { TableSkeleton } from "../../components/ui/Skeleton";
 
 export function AuditTrailPage() {
+  const { t } = useTranslation();
   const [entries, setEntries] = useState<AuditEntry[] | null>(null);
   const [search, setSearch] = useState("");
 
@@ -26,13 +28,13 @@ export function AuditTrailPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-semibold text-navy-900">Audit Trail</h1>
-        <p className="text-sm text-slate-500 mt-0.5">A complete, timestamped record of every processing, validation and verification action.</p>
+        <h1 className="text-xl font-semibold text-navy-900">{t("audit.title", "Audit Trail")}</h1>
+        <p className="text-sm text-slate-500 mt-0.5">{t("audit.subtitle", "A complete, timestamped record of every processing, validation and verification action.")}</p>
       </div>
 
       <Card>
         <div className="p-4 border-b border-slate-100">
-          <Input icon={<Search className="h-3.5 w-3.5" />} placeholder="Search by user, action, or document ID…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input icon={<Search className="h-3.5 w-3.5" />} placeholder={t("audit.searchPlaceholder", "Search by user, action, or document ID…")} value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         {filtered === undefined || entries === null ? (
           <TableSkeleton rows={10} cols={5} />

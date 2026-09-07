@@ -13,6 +13,7 @@ from fastapi import (
 from pymongo.database import Database
 
 from app.core.database import get_db
+from app.core.permissions import require_permission
 from app.api.deps import require_roles, get_current_user
 from app.models.mongo_models import MongoUser, DocumentStatus
 from app.schemas.auth import LoginRequest, TokenResponse
@@ -567,9 +568,7 @@ def get_verification_record(
     summary="Final Approve Master Land Record",
     dependencies=[
         Depends(
-            require_roles(
-                ["tehsil_officer", "super_admin"]
-            )
+            require_permission("APPROVE_RECORD")
         )
     ],
 )

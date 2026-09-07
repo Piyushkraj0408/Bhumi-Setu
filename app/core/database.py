@@ -14,16 +14,18 @@ def get_mongo_client() -> MongoClient:
     if _mongo_client is None:
         try:
             client_kwargs = {
-                "serverSelectionTimeoutMS": 20000,
-                "connectTimeoutMS": 20000,
-                "socketTimeoutMS": 20000,
+                "serverSelectionTimeoutMS": 3000,
+                "connectTimeoutMS": 3000,
+                "socketTimeoutMS": 3000,
                 "retryWrites": True,
             }
-            # Use certifi CA file on Windows to prevent TLS handshake drop
-            try:
-                client_kwargs["tlsCAFile"] = certifi.where()
-            except Exception:
-                pass
+            # Only use certifi CA file when TLS/SSL is enabled in the URI (e.g. Atlas or HTTPS)
+            uri_lower = settings.mongodb_uri.lower()
+            if "tls=true" in uri_lower or "ssl=true" in uri_lower or "mongodb+srv" in uri_lower:
+                try:
+                    client_kwargs["tlsCAFile"] = certifi.where()
+                except Exception:
+                    pass
 
             _mongo_client = MongoClient(settings.mongodb_uri, **client_kwargs)
         except Exception as e:

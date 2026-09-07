@@ -27,7 +27,7 @@ import { VALIDATION_ISSUES } from "../../data/mockData";
 import { Modal } from "../../components/ui/Modal";
 
 export function VerificationWorkspacePage() {
-  const { id = "VT-500" } = useParams();
+  const { id } = useParams();
   const [task, setTask] = useState<VerificationTask | null>(null);
   const [fields, setFields] = useState<ExtractedField[]>([]);
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
@@ -40,6 +40,7 @@ export function VerificationWorkspacePage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!id) return;
     getVerificationTask(id).then((t) => setTask(t ?? null));
     getExtractedFields(id).then((f) => {
       setFields(f);
@@ -48,11 +49,21 @@ export function VerificationWorkspacePage() {
     getValidationIssues(id).then((v) => setIssues(v.length ? v : VALIDATION_ISSUES.slice(0, 3)));
   }, [id]);
 
+  if (!id) {
+    return (
+      <div className="flex flex-col items-center justify-center h-60 text-slate-400 gap-2">
+        <AlertTriangle className="h-8 w-8" />
+        <p className="text-sm">No task selected. Please open a task from the Verification Queue.</p>
+        <Button size="sm" variant="outline" onClick={() => navigate("/verification")}>Go to Queue</Button>
+      </div>
+    );
+  }
+
   const overall = fields.length ? Math.round(fields.reduce((s, f) => s + f.confidence, 0) / fields.length) : 0;
 
   async function decide(decision: "approve" | "reject" | "request_review") {
     setSubmitting(decision);
-    await submitVerificationDecision(id, decision, comment || undefined);
+    await submitVerificationDecision(id || "", decision, comment || undefined, task ?? undefined);
     setSubmitting(null);
     const messages = {
       approve: "Record approved and sent for digital certification.",

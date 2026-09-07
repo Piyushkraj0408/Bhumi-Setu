@@ -5,6 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pymongo.database import Database
 
 from app.core.database import get_db
+from app.core.permissions import require_permission
+from app.core.scope import build_scoped_id_query, merge_scope_filter
 from app.api.deps import require_roles, get_current_user
 from app.models.mongo_models import MongoUser
 from app.schemas.auth import LoginRequest, TokenResponse
@@ -128,42 +130,65 @@ def get_verifier_dashboard(
     summary="Fetch Low-Confidence Tasks",
     dependencies=[
         Depends(
-            require_roles(
-                ["verification_officer", "super_admin"]
-            )
+            require_permission("VIEW_RECORD")
         )
     ],
 )
 def get_verification_queue(
     db: Database = Depends(get_db),
+    current_user: MongoUser = Depends(get_current_user),
 ):
     """
     Retrieve pending HITL verification tasks.
-
-    These tasks are created automatically by the OCR service
-    when confidence is below the configured acceptance threshold.
+    Automatically indexes all MongoDB documents requiring verification.
     """
+    now = datetime.now(timezone.utc)
+
+    # 1. Sync all active documents in MongoDB into verification_tasks if missing
+    all_docs = list(
+        db.documents.find(
+            {"status": {"$ne": "deleted"}}
+        ).sort("created_at", -1).limit(100)
+    )
+
+    for doc in all_docs:
+        doc_id = str(doc.get("_id") or doc.get("id"))
+        existing = db.verification_tasks.find_one({"document_id": doc_id})
+        if not existing:
+            task_id = f"TASK-{doc_id[:8].upper()}"
+            ocr_conf = doc.get("metadata", {}).get("ocr_confidence") or doc.get("ocr", {}).get("overall_confidence")
+            conf = float(ocr_conf) if ocr_conf is not None else 0.72
+            doc_created = doc.get("created_at") or now
+            db.verification_tasks.insert_one(
+                {
+                    "task_id": task_id,
+                    "document_id": doc_id,
+                    "job_id": None,
+                    "status": "pending",
+                    "overall_confidence": conf,
+                    "confidence_band": "low" if conf < 0.75 else "medium",
+                    "flagged_fields": ["owner_name", "khasra_no"] if conf < 0.8 else [],
+                    "corrections": [],
+                    "comments": None,
+                    "created_at": doc_created,
+                    "updated_at": doc_created,
+                }
+            )
 
     tasks = list(
         db.verification_tasks.find(
-            {"status": "pending"}
+            {"status": {"$in": ["pending", "in_review", "assigned"]}}
         )
-        .sort("created_at", 1)
-        .limit(20)
+        .sort("created_at", -1)
+        .limit(100)
     )
 
     result = []
 
     for task in tasks:
-
         document_id = task.get("document_id")
-
         if not document_id:
             continue
-
-        # ----------------------------------------------------
-        # Find associated document
-        # ----------------------------------------------------
 
         document = db.documents.find_one(
             {
@@ -177,20 +202,14 @@ def get_verification_queue(
         if not document:
             continue
 
-        # ----------------------------------------------------
-        # Convert document ID to UUID
-        # ----------------------------------------------------
-
         try:
-            parsed_document_id = uuid.UUID(
-                str(document_id)
-            )
+            parsed_document_id = uuid.UUID(str(document_id))
         except (ValueError, TypeError):
             continue
 
-        # ----------------------------------------------------
-        # Build response
-        # ----------------------------------------------------
+        conf_val = float(task.get("overall_confidence", 0.0))
+        if conf_val <= 1.0 and conf_val > 0.0:
+            conf_val = round(conf_val * 100, 1)
 
         result.append(
             VerificationTaskOut(
@@ -200,12 +219,7 @@ def get_verification_queue(
                     "original_filename",
                     "unknown",
                 ),
-                overall_confidence=float(
-                    task.get(
-                        "overall_confidence",
-                        0.0,
-                    )
-                ),
+                overall_confidence=conf_val,
                 flagged_fields=task.get(
                     "flagged_fields",
                     [],
@@ -213,7 +227,7 @@ def get_verification_queue(
                 doc_type=document.get("doc_type"),
                 created_at=task.get(
                     "created_at"
-                ),
+                ) or now,
             )
         )
 
@@ -229,15 +243,14 @@ def get_verification_queue(
     summary="Get Verification Task Details",
     dependencies=[
         Depends(
-            require_roles(
-                ["verification_officer", "super_admin"]
-            )
+            require_permission("VIEW_RECORD")
         )
     ],
 )
 def get_verification_task(
     task_id: str,
     db: Database = Depends(get_db),
+    current_user: MongoUser = Depends(get_current_user),
 ):
     """
     Return complete verification information including
@@ -245,40 +258,60 @@ def get_verification_task(
     """
 
     # --------------------------------------------------------
-    # Find verification task
+    # Find verification task (by task_id or document_id)
     # --------------------------------------------------------
 
     task = db.verification_tasks.find_one(
-        {"task_id": task_id}
+        {"$or": [{"task_id": task_id}, {"document_id": task_id}]}
     )
 
-    if not task:
+    document = None
+    if task:
+        document_id = task.get("document_id")
+        document = db.documents.find_one(
+            {
+                "$or": [
+                    {"id": document_id},
+                    {"_id": document_id},
+                ]
+            }
+        )
+    else:
+        document = db.documents.find_one(
+            {
+                "$or": [
+                    {"id": task_id},
+                    {"_id": task_id},
+                ]
+            }
+        )
+        if document:
+            doc_id = str(document.get("_id") or document.get("id"))
+            task_id_gen = f"TASK-{doc_id[:8].upper()}"
+            ocr_conf = document.get("metadata", {}).get("ocr_confidence") or document.get("ocr", {}).get("overall_confidence")
+            conf = float(ocr_conf) if ocr_conf is not None else 0.72
+            now_dt = datetime.now(timezone.utc)
+            task = {
+                "task_id": task_id_gen,
+                "document_id": doc_id,
+                "job_id": None,
+                "status": "pending",
+                "overall_confidence": conf,
+                "confidence_band": "low" if conf < 0.75 else "medium",
+                "flagged_fields": ["owner_name", "khasra_no"] if conf < 0.8 else [],
+                "corrections": [],
+                "comments": None,
+                "created_at": document.get("created_at") or now_dt,
+                "updated_at": document.get("created_at") or now_dt,
+            }
+            db.verification_tasks.insert_one(task)
+
+    if not task or not document:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=(
-                f"Verification task '{task_id}' not found"
+                f"Verification task or document '{task_id}' not found"
             ),
-        )
-
-    document_id = task.get("document_id")
-
-    # --------------------------------------------------------
-    # Find associated document
-    # --------------------------------------------------------
-
-    document = db.documents.find_one(
-        {
-            "$or": [
-                {"id": document_id},
-                {"_id": document_id},
-            ]
-        }
-    )
-
-    if not document:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Associated document not found",
         )
 
     # --------------------------------------------------------
@@ -353,9 +386,7 @@ def get_verification_task(
     summary="Submit Corrected Fields",
     dependencies=[
         Depends(
-            require_roles(
-                ["verification_officer", "super_admin"]
-            )
+            require_permission("VERIFY_RECORD")
         )
     ],
 )
@@ -375,16 +406,30 @@ def submit_verification(
     # --------------------------------------------------------
 
     task = db.verification_tasks.find_one(
-        {"task_id": task_id}
+        {"$or": [{"task_id": task_id}, {"document_id": task_id}]}
     )
 
     if not task:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=(
-                f"Verification task '{task_id}' not found"
-            ),
+        document = db.documents.find_one(
+            {"$or": [{"id": task_id}, {"_id": task_id}]}
         )
+        if document:
+            doc_id = str(document.get("_id") or document.get("id"))
+            task_id_gen = f"TASK-{doc_id[:8].upper()}"
+            task = {
+                "task_id": task_id_gen,
+                "document_id": doc_id,
+                "status": "pending",
+                "overall_confidence": 0.72,
+                "flagged_fields": [],
+                "created_at": document.get("created_at") or datetime.now(timezone.utc),
+            }
+            db.verification_tasks.insert_one(task)
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Verification task '{task_id}' not found",
+            )
 
     # --------------------------------------------------------
     # Task must still be pending
@@ -638,9 +683,7 @@ def submit_verification(
     summary="Reject Illegible or Invalid Record",
     dependencies=[
         Depends(
-            require_roles(
-                ["verification_officer", "super_admin"]
-            )
+            require_permission("VERIFY_RECORD")
         )
     ],
 )
@@ -660,16 +703,30 @@ def reject_verification_task(
     # --------------------------------------------------------
 
     task = db.verification_tasks.find_one(
-        {"task_id": task_id}
+        {"$or": [{"task_id": task_id}, {"document_id": task_id}]}
     )
 
     if not task:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=(
-                f"Verification task '{task_id}' not found"
-            ),
+        document = db.documents.find_one(
+            {"$or": [{"id": task_id}, {"_id": task_id}]}
         )
+        if document:
+            doc_id = str(document.get("_id") or document.get("id"))
+            task_id_gen = f"TASK-{doc_id[:8].upper()}"
+            task = {
+                "task_id": task_id_gen,
+                "document_id": doc_id,
+                "status": "pending",
+                "overall_confidence": 0.72,
+                "flagged_fields": [],
+                "created_at": document.get("created_at") or datetime.now(timezone.utc),
+            }
+            db.verification_tasks.insert_one(task)
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Verification task '{task_id}' not found",
+            )
 
     # --------------------------------------------------------
     # Only pending tasks can be rejected

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   LayoutDashboard,
   FileStack,
@@ -31,6 +32,7 @@ import type { SystemRole } from "../../types";
 
 interface NavChild {
   label: string;
+  tKey?: string;
   to: string;
   icon: React.ElementType;
   /** Roles allowed to see this nav item. Omit = visible to all. */
@@ -38,6 +40,7 @@ interface NavChild {
 }
 interface NavGroup {
   label: string;
+  tKey?: string;
   icon: React.ElementType;
   to?: string;
   children?: NavChild[];
@@ -51,28 +54,32 @@ interface NavGroup {
 // super_admin & state_admin see everything (handled in canSee()).
 // ---------------------------------------------------------------------------
 const NAV: NavGroup[] = [
-  { label: "Dashboard", icon: LayoutDashboard, to: "/dashboard" },
+  { label: "Dashboard", tKey: "nav.dashboard", icon: LayoutDashboard, to: "/dashboard" },
 
   {
     label: "Documents",
+    tKey: "nav.documents",
     icon: FileStack,
     roles: ["super_admin", "state_admin", "district_admin", "tehsil_officer"],
     children: [
       {
         label: "Upload Document",
+        tKey: "nav.uploadDocument",
         to: "/documents/upload",
         icon: UploadCloud,
         roles: ["super_admin", "state_admin", "district_admin", "tehsil_officer"],
       },
       {
         label: "All Documents",
+        tKey: "nav.allDocuments",
         to: "/documents",
         icon: Files,
         roles: ["super_admin", "state_admin", "district_admin", "tehsil_officer"],
       },
       {
         label: "Processing",
-        to: "/documents/processing/DOC-2024-1004",
+        tKey: "nav.processing",
+        to: "/documents/processing",
         icon: Cpu,
         roles: ["super_admin", "state_admin", "district_admin", "tehsil_officer"],
       },
@@ -81,24 +88,28 @@ const NAV: NavGroup[] = [
 
   {
     label: "AI Processing",
+    tKey: "nav.aiProcessing",
     icon: Sparkles,
     roles: ["super_admin", "state_admin", "district_admin", "tehsil_officer"],
     children: [
       {
         label: "OCR / HTR",
-        to: "/documents/DOC-2024-1004/ocr",
+        tKey: "nav.ocr",
+        to: "/ai/ocr",
         icon: ScanText,
         roles: ["super_admin", "state_admin", "district_admin", "tehsil_officer"],
       },
       {
         label: "Extraction",
-        to: "/documents/DOC-2024-1004/extraction",
+        tKey: "nav.extraction",
+        to: "/ai/extraction",
         icon: Sparkles,
         roles: ["super_admin", "state_admin", "district_admin", "tehsil_officer"],
       },
       {
         label: "Validation",
-        to: "/documents/DOC-2024-1004/validation",
+        tKey: "nav.validation",
+        to: "/ai/validation",
         icon: ShieldCheck,
         roles: ["super_admin", "state_admin", "district_admin", "tehsil_officer"],
       },
@@ -107,24 +118,28 @@ const NAV: NavGroup[] = [
 
   {
     label: "Verification",
+    tKey: "nav.verification",
     icon: ClipboardCheck,
     roles: ["super_admin", "state_admin", "district_admin", "tehsil_officer", "verification_officer"],
     children: [
       {
         label: "Verification Queue",
+        tKey: "nav.verificationQueue",
         to: "/verification",
         icon: ListChecks,
         roles: ["super_admin", "state_admin", "district_admin", "tehsil_officer", "verification_officer"],
       },
       {
         label: "My Tasks",
-        to: "/verification?filter=mine",
+        tKey: "nav.myTasks",
+        to: "/verification/my-tasks",
         icon: ClipboardCheck,
         roles: ["super_admin", "state_admin", "district_admin", "tehsil_officer", "verification_officer"],
       },
       {
         label: "Completed",
-        to: "/verification?filter=completed",
+        tKey: "nav.completed",
+        to: "/verification/completed",
         icon: CheckCircle2,
         roles: ["super_admin", "state_admin", "district_admin", "tehsil_officer", "verification_officer"],
       },
@@ -133,26 +148,30 @@ const NAV: NavGroup[] = [
 
   {
     label: "Land Records",
+    tKey: "nav.landRecords",
     icon: Landmark,
     children: [
-      { label: "Search Records", to: "/records", icon: Search },
-      { label: "Record Details", to: "/records/LR-2024-1", icon: MapPinned },
+      { label: "Search Records", tKey: "nav.searchRecords", to: "/records", icon: Search },
+      { label: "Record Details", tKey: "nav.recordDetails", to: "/records/LR-2024-1", icon: MapPinned },
     ],
   },
 
   {
     label: "GIS",
+    tKey: "nav.gis",
     icon: Map,
     roles: ["super_admin", "state_admin", "district_admin", "tehsil_officer"],
     children: [
       {
         label: "Cadastral Map",
+        tKey: "nav.cadastralMap",
         to: "/gis",
         icon: Map,
         roles: ["super_admin", "state_admin", "district_admin", "tehsil_officer"],
       },
       {
         label: "Spatial Validation",
+        tKey: "nav.spatialValidation",
         to: "/gis?tab=validation",
         icon: Compass,
         roles: ["super_admin", "state_admin", "district_admin", "tehsil_officer"],
@@ -162,6 +181,7 @@ const NAV: NavGroup[] = [
 
   {
     label: "Analytics",
+    tKey: "nav.analytics",
     icon: BarChart3,
     to: "/analytics",
     roles: ["super_admin", "state_admin", "district_admin"],
@@ -169,6 +189,7 @@ const NAV: NavGroup[] = [
 
   {
     label: "Audit Trail",
+    tKey: "nav.auditTrail",
     icon: History,
     to: "/audit",
     roles: ["super_admin", "state_admin", "district_admin", "auditor"],
@@ -176,12 +197,13 @@ const NAV: NavGroup[] = [
 
   {
     label: "Administration",
+    tKey: "nav.administration",
     icon: UserCog,
     to: "/admin",
     roles: ["super_admin", "state_admin"],
   },
 
-  { label: "Settings", icon: Settings2, to: "/settings" },
+  { label: "Settings", tKey: "nav.settings", icon: Settings2, to: "/settings" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -203,9 +225,12 @@ function GroupItem({
   collapsed: boolean;
   userRole: SystemRole;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(true);
 
   if (!canSee(group.roles, userRole)) return null;
+
+  const displayLabel = group.tKey ? t(group.tKey, group.label) : group.label;
 
   if (!group.children) {
     return (
@@ -219,7 +244,7 @@ function GroupItem({
         }
       >
         <group.icon className="h-4 w-4 shrink-0" />
-        {!collapsed && <span>{group.label}</span>}
+        {!collapsed && <span>{displayLabel}</span>}
       </NavLink>
     );
   }
@@ -237,7 +262,7 @@ function GroupItem({
         <group.icon className="h-4 w-4 shrink-0" />
         {!collapsed && (
           <>
-            <span className="flex-1 text-left">{group.label}</span>
+            <span className="flex-1 text-left">{displayLabel}</span>
             <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
           </>
         )}
@@ -254,11 +279,14 @@ function GroupItem({
 }
 
 function ChildLink({ child }: { child: NavChild }) {
+  const { t } = useTranslation();
   const location = useLocation();
   const [childPath, childSearch] = child.to.split("?");
   const isActive =
     location.pathname === childPath &&
     (childSearch ? location.search === `?${childSearch}` : location.search === "");
+
+  const displayLabel = child.tKey ? t(child.tKey, child.label) : child.label;
 
   return (
     <NavLink
@@ -269,12 +297,13 @@ function ChildLink({ child }: { child: NavChild }) {
       )}
     >
       <child.icon className="h-3.5 w-3.5 shrink-0" />
-      <span>{child.label}</span>
+      <span>{displayLabel}</span>
     </NavLink>
   );
 }
 
 export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+  const { t } = useTranslation();
   const { currentUser } = useAuth();
   const userRole: SystemRole = currentUser?.systemRole ?? "tehsil_officer";
 
@@ -285,14 +314,18 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         collapsed ? "w-[68px]" : "w-64"
       )}
     >
-      <div className="flex items-center gap-2.5 px-4 h-16 border-b border-white/10 shrink-0">
-        <div className="h-8 w-8 rounded-md bg-brand-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
-          IL
+      <div className="flex items-center gap-3 px-3.5 h-16 border-b border-white/10 shrink-0">
+        <div className="h-9 w-9 rounded-full bg-white p-0.5 shadow-xs flex items-center justify-center overflow-hidden shrink-0">
+          <img
+            src="/logo.png"
+            alt="BhoomiSetu"
+            className="w-full h-full object-cover rounded-full"
+          />
         </div>
         {!collapsed && (
           <div className="min-w-0">
-            <p className="text-white text-sm font-bold leading-tight tracking-tight">ILRDVS</p>
-            <p className="text-[10px] text-slate-400 leading-tight truncate">Land Record Digitization</p>
+            <p className="text-white text-sm font-bold leading-tight tracking-tight">BhoomiSetu</p>
+            <p className="text-[10px] text-emerald-400 font-medium leading-tight truncate">Land Records Portal</p>
           </div>
         )}
       </div>
@@ -308,7 +341,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         className="flex items-center gap-2 px-4 h-11 border-t border-white/10 text-slate-400 hover:text-white text-xs shrink-0"
       >
         {collapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
-        {!collapsed && <span>Collapse</span>}
+        {!collapsed && <span>{t("nav.collapse", "Collapse")}</span>}
       </button>
     </aside>
   );

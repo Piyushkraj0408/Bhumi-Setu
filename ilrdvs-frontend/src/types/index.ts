@@ -93,6 +93,9 @@ export interface LandDocument {
   verificationStatus: VerificationStatus;
   stages: ProcessingStage[];
   thumbnailColor: string;
+  previewUrl?: string;
+  fileUrl?: string;
+  year?: string;
 }
 
 export interface ExtractedField {

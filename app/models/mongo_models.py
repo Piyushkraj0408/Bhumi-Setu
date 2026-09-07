@@ -47,6 +47,15 @@ class MongoUser:
         self.last_login_at = doc.get("last_login_at")
         self.role_assignments = doc.get("role_assignments", [])
 
+        # Primary role and jurisdiction scopes
+        primary_ra = self.role_assignments[0] if self.role_assignments else {}
+        self.role = doc.get("role") or primary_ra.get("role_name", "tehsil_officer")
+        
+        # Extract scope identifiers
+        self.state_id = doc.get("state_id") or (primary_ra.get("scope_id") if primary_ra.get("scope_type") == "state" else None)
+        self.district_id = doc.get("district_id") or (primary_ra.get("scope_id") if primary_ra.get("scope_type") == "district" else None)
+        self.tehsil_id = doc.get("tehsil_id") or (primary_ra.get("scope_id") if primary_ra.get("scope_type") == "tehsil" else None)
+
     def to_dict(self) -> dict[str, Any]:
         return self.doc
 

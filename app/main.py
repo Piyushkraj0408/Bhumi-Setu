@@ -12,7 +12,10 @@ from app.api.routes import (
     verification_officer,
     auditor,
     public_portal,
+    validation,
+    records,
 )
+from app.core.config import settings
 from app.core.database import init_db
 
 
@@ -30,10 +33,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Enable CORS for Frontend integration (React, Next.js, Vite, etc.)
+# Enable CORS with explicit origin whitelist (rejects wildcard with credentials)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -42,6 +45,7 @@ app.add_middleware(
 # 1. Authentication & Common Endpoints
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(documents.router, prefix="/api/v1")
+app.include_router(records.router, prefix="/api/v1")
 
 # 2. Role-Differentiated APIs
 app.include_router(super_admin.router, prefix="/api/v1")
@@ -51,6 +55,7 @@ app.include_router(tehsil_officer.router, prefix="/api/v1")
 app.include_router(verification_officer.router, prefix="/api/v1")
 app.include_router(auditor.router, prefix="/api/v1")
 app.include_router(public_portal.router, prefix="/api/v1")
+app.include_router(validation.router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["system"])
