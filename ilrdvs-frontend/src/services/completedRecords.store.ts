@@ -11,6 +11,21 @@ const STORAGE_KEY = "ilrdvs_completed_records";
 
 export type CompletedDecision = "Approved" | "Rejected" | "Review Requested";
 
+export interface CompletedRecordDetails {
+  ownerName?: string;
+  fatherName?: string;
+  khasraNumber?: string;
+  khataNumber?: string;
+  tauziNumber?: string;
+  areaHectares?: string;
+  landType?: string;
+  state?: string;
+  district?: string;
+  tehsil?: string;
+  village?: string;
+  documentYear?: string;
+}
+
 export interface CompletedRecord {
   /** Unique entry ID (document ID + timestamp) */
   id: string;
@@ -37,6 +52,12 @@ export interface CompletedRecord {
   officer: string;
   /** Source workflow: "extraction" | "verification" */
   source: "extraction" | "verification";
+  /** Public blockchain record number, e.g. BHU-2026-00001 */
+  recordNumber?: string;
+  /** Field corrections made by Tehsil Officer */
+  corrections?: Record<string, string>;
+  /** Structured record details for public lookup */
+  recordDetails?: CompletedRecordDetails;
 }
 
 // ---------------------------------------------------------------------------

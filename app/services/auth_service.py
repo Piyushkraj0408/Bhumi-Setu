@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, status
 from jose import JWTError
 from pymongo.database import Database
-
+from app.services import validation_service
 from app.core.security import (
     verify_password,
     hash_password,

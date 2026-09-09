@@ -21,7 +21,6 @@ const FILTER_CHIPS: Array<{ key: keyof VerificationFilters; label: string; tKey:
   { key: "onlyGisMismatch", label: "GIS Mismatch", tKey: "verification.gisMismatch" },
   { key: "assignedToMe", label: "Assigned to Me", tKey: "dashboard.assignedToMe" },
   { key: "onlyHighPriority", label: "High Priority", tKey: "dashboard.highPriority" },
-  { key: "onlyOverdue", label: "Overdue", tKey: "dashboard.overdue" },
 ];
 
 const PRIORITY_TONE = { High: "danger", Medium: "warning", Low: "neutral" } as const;
@@ -88,7 +87,6 @@ export function VerificationQueuePage() {
                     <th className="px-4 py-3 font-medium">{t("table.confidence", "Confidence")}</th>
                     <th className="px-4 py-3 font-medium">{t("table.validationIssues", "Validation Issues")}</th>
                     <th className="px-4 py-3 font-medium">{t("table.assignedTo", "Assigned To")}</th>
-                    <th className="px-4 py-3 font-medium">{t("table.age", "Age")}</th>
                     <th className="px-4 py-3 font-medium">{t("table.status", "Status")}</th>
                     <th className="px-4 py-3 font-medium text-right">{t("table.action", "Action")}</th>
                   </tr>
@@ -103,9 +101,6 @@ export function VerificationQueuePage() {
                       <td className="px-4 py-3"><ConfidenceBadge value={tItem.confidence} /></td>
                       <td className="px-4 py-3 text-slate-600">{tItem.validationIssueCount || "—"}</td>
                       <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{tItem.assignedTo ?? <span className="text-slate-400">{t("verification.unassigned", "Unassigned")}</span>}</td>
-                      <td className={cn("px-4 py-3 whitespace-nowrap", tItem.flags.includes("overdue") ? "text-danger-500 font-medium" : "text-slate-500")}>
-                        {tItem.ageHours}h {tItem.flags.includes("overdue") && `· ${t("dashboard.overdue", "Overdue")}`}
-                      </td>
                       <td className="px-4 py-3">
                         <Badge tone={tItem.status === "in_review" ? "info" : tItem.status === "assigned" ? "brand" : "neutral"}>
                           {t(`status.${tItem.status}`, tItem.status.replace("_", " "))}

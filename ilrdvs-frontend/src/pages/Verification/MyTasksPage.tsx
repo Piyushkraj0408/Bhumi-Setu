@@ -9,7 +9,6 @@ import { TableSkeleton } from "../../components/ui/Skeleton";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { listVerificationTasks } from "../../services/verification.service";
 import type { VerificationTask } from "../../types";
-import { cn } from "../../lib/cn";
 import { ClipboardCheck } from "lucide-react";
 import { useAuth } from "../../lib/AuthContext";
 
@@ -70,7 +69,6 @@ export function MyTasksPage() {
                     <th className="px-4 py-3 font-medium">Location</th>
                     <th className="px-4 py-3 font-medium">Confidence</th>
                     <th className="px-4 py-3 font-medium">Issues</th>
-                    <th className="px-4 py-3 font-medium">Age</th>
                     <th className="px-4 py-3 font-medium">Status</th>
                     <th className="px-4 py-3 font-medium text-right">Action</th>
                   </tr>
@@ -84,9 +82,6 @@ export function MyTasksPage() {
                       <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{t.location.village}, {t.location.district}</td>
                       <td className="px-4 py-3"><ConfidenceBadge value={t.confidence} /></td>
                       <td className="px-4 py-3 text-slate-600">{t.validationIssueCount || "—"}</td>
-                      <td className={cn("px-4 py-3 whitespace-nowrap", t.flags.includes("overdue") ? "text-danger-500 font-medium" : "text-slate-500")}>
-                        {t.ageHours}h {t.flags.includes("overdue") && "· Overdue"}
-                      </td>
                       <td className="px-4 py-3">
                         <Badge tone={t.status === "in_review" ? "info" : t.status === "assigned" ? "brand" : "neutral"}>
                           {t.status.replace("_", " ")}

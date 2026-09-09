@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.api.routes import blockchain
+from app.api.routes import blockchain_governance
 
 from app.api.routes import (
     auth,
@@ -56,7 +58,11 @@ app.include_router(verification_officer.router, prefix="/api/v1")
 app.include_router(auditor.router, prefix="/api/v1")
 app.include_router(public_portal.router, prefix="/api/v1")
 app.include_router(validation.router, prefix="/api/v1")
-
+app.include_router(blockchain.router, prefix="/api/v1")
+app.include_router(
+    blockchain_governance.router,
+    prefix="/api/v1",
+)
 
 @app.get("/health", tags=["system"])
 def health():

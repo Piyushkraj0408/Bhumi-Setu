@@ -59,7 +59,7 @@ export function VerificationWorkspacePage() {
     );
   }
 
-  const overall = fields.length ? Math.round(fields.reduce((s, f) => s + f.confidence, 0) / fields.length) : 0;
+  const overall = task?.confidence ?? (fields.length ? Math.min(...fields.map((f) => f.confidence)) : 0);
 
   async function decide(decision: "approve" | "reject" | "request_review") {
     setSubmitting(decision);

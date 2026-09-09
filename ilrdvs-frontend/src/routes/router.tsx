@@ -11,6 +11,7 @@ import { ProcessingLandingPage } from "../pages/Documents/ProcessingLandingPage"
 import { AiProcessingLanding } from "../pages/Documents/AiProcessingLanding";
 import { OcrViewerPage } from "../pages/Documents/OcrViewerPage";
 import { ExtractionViewerPage } from "../pages/Documents/ExtractionViewerPage";
+import { TehsilReviewPage } from "../pages/Documents/TehsilReviewPage";
 import { ValidationResultsPage } from "../pages/Documents/ValidationResultsPage";
 import { VerificationQueuePage } from "../pages/Verification/VerificationQueuePage";
 import { VerificationWorkspacePage } from "../pages/Verification/VerificationWorkspacePage";
@@ -18,6 +19,7 @@ import { MyTasksPage } from "../pages/Verification/MyTasksPage";
 import { CompletedVerificationsPage } from "../pages/Verification/CompletedVerificationsPage";
 import { RecordSearchPage } from "../pages/Records/RecordSearchPage";
 import { RecordDetailsPage } from "../pages/Records/RecordDetailsPage";
+import { PublicSearchPage } from "../pages/Records/PublicSearchPage";
 import { GisMapPage } from "../pages/GIS/GisMapPage";
 import { AnalyticsPage } from "../pages/Analytics/AnalyticsPage";
 import { AuditTrailPage } from "../pages/Audit/AuditTrailPage";
@@ -30,6 +32,10 @@ export const router = createBrowserRouter([
   { path: "/", element: <Navigate to="/login" replace /> },
   { path: "/login", element: <LoginPage /> },
   { path: "/signup", element: <SignupPage /> },
+
+  // ── Public citizen portal (no AppShell/auth required) ──
+  { path: "/public/search", element: <PublicSearchPage /> },
+
   {
     element: <AppShell />,
     children: [
@@ -44,6 +50,8 @@ export const router = createBrowserRouter([
       { path: "/ai/validation", element: <AiProcessingLanding step="validation" />, ...bc([{ label: "AI Processing" }, { label: "Validation" }]) },
       { path: "/documents/:id/ocr", element: <OcrViewerPage />, ...bc([{ label: "AI Processing" }, { label: "OCR / HTR" }]) },
       { path: "/documents/:id/extraction", element: <ExtractionViewerPage />, ...bc([{ label: "AI Processing" }, { label: "Extraction" }]) },
+      // ── NEW: Tehsil Officer conflict resolution ──
+      { path: "/documents/:id/tehsil-review", element: <TehsilReviewPage />, ...bc([{ label: "AI Processing" }, { label: "Tehsil Review" }]) },
       { path: "/documents/:id/validation", element: <ValidationResultsPage />, ...bc([{ label: "AI Processing" }, { label: "Validation" }]) },
       { path: "/documents/:id", element: <DocumentDetailsPage />, ...bc([{ label: "Documents", to: "/documents" }, { label: "Details" }]) },
 

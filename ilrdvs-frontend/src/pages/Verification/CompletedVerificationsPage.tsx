@@ -11,7 +11,8 @@ import {
   clearCompletedRecords,
   type CompletedRecord,
 } from "../../services/completedRecords.store";
-import { CheckCircle2, Trash2, ExternalLink } from "lucide-react";
+import { CheckCircle2, Trash2, ExternalLink, Copy, Check, Search } from "lucide-react";
+
 
 const DECISION_TONE = {
   Approved: "success",
@@ -27,10 +28,10 @@ const SOURCE_LABEL: Record<CompletedRecord["source"], string> = {
 export function CompletedVerificationsPage() {
   const [records, setRecords] = useState<CompletedRecord[]>([]);
   const [page, setPage] = useState(1);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const navigate = useNavigate();
   const pageSize = 8;
 
-  // Re-read store on mount (and on focus so it refreshes after approving in another tab)
   const load = () => setRecords(getCompletedRecords());
 
   useEffect(() => {
@@ -48,6 +49,12 @@ export function CompletedVerificationsPage() {
       setPage(1);
     }
   };
+
+  function copyRecordNumber(num: string) {
+    navigator.clipboard.writeText(num).catch(() => {});
+    setCopiedId(num);
+    setTimeout(() => setCopiedId(null), 2000);
+  }
 
   return (
     <div className="space-y-5">
@@ -100,6 +107,8 @@ export function CompletedVerificationsPage() {
                     <th className="px-4 py-3 font-medium">Confidence</th>
                     <th className="px-4 py-3 font-medium">Decision</th>
                     <th className="px-4 py-3 font-medium">Source</th>
+                    {/* ── NEW: Record Number column ── */}
+                    <th className="px-4 py-3 font-medium text-brand-700">Record No.</th>
                     <th className="px-4 py-3 font-medium">Completed At</th>
                     <th className="px-4 py-3 font-medium">Officer</th>
                     <th className="px-4 py-3 font-medium text-right">View</th>
@@ -128,6 +137,34 @@ export function CompletedVerificationsPage() {
                       </td>
                       <td className="px-4 py-3 text-slate-500 whitespace-nowrap text-xs">
                         {SOURCE_LABEL[r.source]}
+                      </td>
+                      {/* ── Record Number cell ── */}
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {r.recordNumber ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-xs font-semibold text-brand-700 bg-brand-50 border border-brand-200 px-2 py-0.5 rounded">
+                              {r.recordNumber}
+                            </span>
+                            <button
+                              title="Copy record number"
+                              onClick={() => copyRecordNumber(r.recordNumber!)}
+                              className="text-slate-400 hover:text-brand-600 transition-colors"
+                            >
+                              {copiedId === r.recordNumber
+                                ? <Check className="h-3.5 w-3.5 text-emerald-500" />
+                                : <Copy className="h-3.5 w-3.5" />}
+                            </button>
+                            <button
+                              title="Public lookup"
+                              onClick={() => navigate("/public/search")}
+                              className="text-slate-400 hover:text-brand-600 transition-colors"
+                            >
+                              <Search className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-slate-400 whitespace-nowrap text-xs">
                         {new Date(r.completedAt).toLocaleString("en-IN", {

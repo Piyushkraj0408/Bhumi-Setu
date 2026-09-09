@@ -1,5 +1,8 @@
 import uuid
 from datetime import datetime, timezone
+from app.services import validation_service
+from app.services import blockchain_service
+
 
 from fastapi import (
     APIRouter,
@@ -27,7 +30,12 @@ from app.schemas.roles_api import (
     MasterRecordOut,
     MessageResponse,
 )
-from app.services import document_service, auth_service
+from app.services import (
+    document_service,
+    auth_service,
+    validation_service,
+    blockchain_service,
+)
 
 
 router = APIRouter(
@@ -557,7 +565,6 @@ def get_verification_record(
         "ocr": ocr,
     }
 
-
 # ============================================================
 # APPROVE MASTER RECORD
 # ============================================================
@@ -565,7 +572,7 @@ def get_verification_record(
 @router.post(
     "/records/approve",
     response_model=MessageResponse,
-    summary="Final Approve Master Land Record",
+    summary="Validate and Approve Master Land Record",
     dependencies=[
         Depends(
             require_permission("APPROVE_RECORD")
@@ -578,10 +585,30 @@ def approve_master_record(
     current_user: MongoUser = Depends(get_current_user),
 ):
     """
-    Convert verified OCR data into a permanent Master Land Record.
+    Convert verified OCR data into a Master Land Record.
+
+    Flow:
+
+        Verified OCR
+            ↓
+        Build master record
+            ↓
+        Validation Engine
+            ↓
+        VALID / WARNING / CONFLICT
+            ↓
+        Blockchain
+            ↓
+        Master Record
     """
 
-    document_id = str(payload.document_id)
+    # ========================================================
+    # 1. DOCUMENT
+    # ========================================================
+
+    document_id = str(
+        payload.document_id
+    )
 
     document = get_document(
         db,
@@ -589,54 +616,127 @@ def approve_master_record(
     )
 
     if not document:
+
         raise HTTPException(
             status_code=404,
             detail="Document not found",
         )
 
-    tehsil_code = get_tehsil_code(current_user)
+    # ========================================================
+    # 2. TEHSIL SCOPE CHECK
+    # ========================================================
+
+    tehsil_code = get_tehsil_code(
+        current_user
+    )
 
     if (
         tehsil_code
         and document.get("scope_id") != tehsil_code
     ):
+
         raise HTTPException(
             status_code=403,
-            detail="Document does not belong to your Tehsil",
+            detail=(
+                "Document does not belong "
+                "to your Tehsil"
+            ),
         )
+
+    # ========================================================
+    # 3. OCR RESULT
+    # ========================================================
 
     ocr = document.get("ocr") or {}
 
     if not ocr:
+
         raise HTTPException(
             status_code=400,
             detail="OCR result not available",
         )
 
-    # --------------------------------------------------------
-    # Find extracted OCR fields
-    # --------------------------------------------------------
-
-    ocr_result = ocr.get("result") or {}
+    ocr_result = ocr.get(
+        "result"
+    ) or {}
 
     fields = extract_fields(
         ocr_result
     )
 
-    # --------------------------------------------------------
-    # Create Master Record
-    # --------------------------------------------------------
+    # ========================================================
+    # 4. VERIFY HUMAN VERIFICATION FIRST
+    # ========================================================
+
+    verification_task = (
+        db.verification_tasks.find_one(
+            {
+                "document_id": document_id
+            }
+        )
+    )
+
+    if verification_task:
+
+        verification_status = (
+            verification_task.get(
+                "status"
+            )
+        )
+
+        if verification_status != "verified":
+
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Document has not been "
+                    "verified by a Verification Officer."
+                ),
+            )
+
+    # ========================================================
+    # 5. PREVENT DUPLICATE MASTER RECORD
+    # ========================================================
+
+    existing = (
+        db.master_records.find_one(
+            {
+                "document_id": document_id
+            }
+        )
+    )
+
+    if existing:
+
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Master Record already exists "
+                "for this document."
+            ),
+        )
+
+    # ========================================================
+    # 6. CREATE MASTER RECORD CANDIDATE
+    # ========================================================
 
     record_id = (
         f"REC-{uuid.uuid4().hex[:12].upper()}"
     )
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(
+        timezone.utc
+    )
 
     master_record = {
+
         "record_id": record_id,
 
         "document_id": document_id,
+
+        # ----------------------------------------------------
+        # AUTHORITATIVE TEHSIL VALUES
+        # ----------------------------------------------------
 
         "khasra_number": (
             payload.khasra_number
@@ -646,32 +746,57 @@ def approve_master_record(
             )
         ),
 
+        "owner_name": (
+            payload.owner_name
+            or field_value(
+                fields,
+                "owner_name",
+            )
+        ),
+
+        "total_area_sq_meters": (
+            payload.area_sq_meters
+            or field_value(
+                fields,
+                "total_area_sq_meters",
+            )
+            or field_value(
+                fields,
+                "area",
+            )
+        ),
+
+        # ----------------------------------------------------
+        # OCR VALUES
+        # ----------------------------------------------------
+
         "khata_number": field_value(
             fields,
             "khata_number",
         ),
 
-        "owner_name": field_value(
-            fields,
-            "owner_name",
+        "father_or_husband_name": (
+            field_value(
+                fields,
+                "father_or_husband_name",
+            )
+            or field_value(
+                fields,
+                "father_name",
+            )
         ),
 
-        "father_or_husband_name": field_value(
-            fields,
-            "father_or_husband_name",
-        ) or field_value(
-            fields,
-            "father_name",
-        ),
-
-        "village": field_value(
-            fields,
-            "village",
-        ) or document.get(
-            "metadata",
-            {},
-        ).get(
-            "village_name"
+        "village": (
+            field_value(
+                fields,
+                "village",
+            )
+            or document.get(
+                "metadata",
+                {},
+            ).get(
+                "village_name"
+            )
         ),
 
         "tehsil": field_value(
@@ -684,81 +809,241 @@ def approve_master_record(
             "district",
         ),
 
-        "total_area_sq_meters": field_value(
+        "record_year": field_value(
             fields,
-            "total_area_sq_meters",
-        ) or field_value(
-            fields,
-            "area",
+            "record_year",
         ),
 
-        "status": "approved",
+        # ----------------------------------------------------
+        # WORKFLOW
+        # ----------------------------------------------------
+
+        "status": "pending_validation",
 
         "approved_by": str(
             current_user.id
         ),
 
-        "approved_by_name": current_user.name,
+        "approved_by_name": (
+            current_user.name
+        ),
 
         "approved_at": now,
+
+        "created_at": now,
 
         "last_updated": now,
 
         "source": "ocr_verified",
 
-        "created_at": now,
+        "tehsil_code": tehsil_code,
+
+        "remarks": payload.remarks,
     }
 
-    # --------------------------------------------------------
-    # Prevent duplicate Master Record
-    # --------------------------------------------------------
+    # ========================================================
+    # 7. VALIDATION ENGINE
+    # ========================================================
 
-    existing = db.master_records.find_one(
-        {
-            "document_id": document_id
-        }
+    validation_result = (
+        validation_service.validate_master_record(
+            db=db,
+            master_record=master_record,
+            ocr_fields=fields,
+        )
     )
 
-    if existing:
-        raise HTTPException(
-            status_code=409,
-            detail="Master Record already exists for this document",
+    # ========================================================
+    # 8. SAVE VALIDATION RESULT
+    # ========================================================
+
+    validation_service.save_validation_result(
+        db=db,
+        master_record=master_record,
+        validation_result=validation_result,
+        validated_by=str(
+            current_user.id
+        ),
+    )
+
+    # ========================================================
+    # 9. STORE VALIDATION INFORMATION
+    # ========================================================
+
+    master_record[
+        "validation"
+    ] = validation_result
+
+    # ========================================================
+    # 10. CONFLICT → STOP
+    # ========================================================
+
+    if validation_result[
+        "status"
+    ] == "conflict":
+
+        # Do NOT insert into master_records.
+
+        db.documents.update_one(
+            {
+                "$or": [
+                    {
+                        "_id": document_id
+                    },
+                    {
+                        "id": document_id
+                    },
+                ]
+            },
+            {
+                "$set": {
+                    "metadata.validation_status":
+                        "conflict",
+
+                    "metadata.validation_issue_count":
+                        validation_result[
+                            "issue_count"
+                        ],
+
+                    "metadata.validation_checked_at":
+                        now,
+                }
+            },
         )
 
-    # --------------------------------------------------------
-    # Save Master Record
-    # --------------------------------------------------------
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "message": (
+                    "Validation conflict detected. "
+                    "Master Record was NOT created."
+                ),
+                "validation": validation_result,
+            },
+        )
 
-    db.master_records.insert_one(
-        master_record
-    )
+        # ========================================================
+    # 11. VALID / WARNING → ALLOW BLOCKCHAIN
+    # ========================================================
 
-    # --------------------------------------------------------
-    # Update document
-    # --------------------------------------------------------
+    master_record["status"] = "approved"
 
-    db.documents.update_one(
+    master_record["validation_status"] = validation_result["status"]
+
+    # ========================================================
+    # 12. INSERT MASTER RECORD FIRST
+    # ========================================================
+
+    try:
+        db.master_records.insert_one(master_record)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Master Record could not be created. "
+                "Blockchain anchoring was not attempted."
+            ),
+        )
+
+    # ========================================================
+    # 13. BLOCKCHAIN ANCHOR
+    # ========================================================
+
+    try:
+        blockchain_result = (
+            blockchain_service.anchor_master_record(
+                db=db,
+                master_record=master_record,
+                approved_by=str(current_user.id),
+                approved_by_name=current_user.name,
+            )
+        )
+
+    except Exception as e:
+        # Blockchain failed, so remove the unanchored
+        # master record. It must not remain in the
+        # approved Master Registry without blockchain proof.
+
+        db.master_records.delete_one(
+            {
+                "record_id": record_id
+            }
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Blockchain anchoring failed. "
+                "Master Record was rolled back and "
+                "was not committed to the Master Registry."
+            ),
+        )
+
+    # ========================================================
+    # 14. STORE BLOCKCHAIN REFERENCE
+    # ========================================================
+
+    db.master_records.update_one(
         {
-            "$or": [
-                {"_id": document_id},
-                {"id": document_id},
-            ]
+            "record_id": record_id
         },
         {
             "$set": {
-                "metadata.master_record_id": record_id,
-                "metadata.master_record_status": "approved",
-                "metadata.approved_by": str(
-                    current_user.id
-                ),
-                "metadata.approved_at": now,
+                "blockchain": blockchain_result,
+                "last_updated": now,
             }
         },
     )
 
-    # --------------------------------------------------------
-    # Update verification task
-    # --------------------------------------------------------
+    # ========================================================
+    # 15. UPDATE DOCUMENT
+    # ========================================================
+
+    db.documents.update_one(
+        {
+            "$or": [
+                {
+                    "_id": document_id
+                },
+                {
+                    "id": document_id
+                },
+            ]
+        },
+        {
+            "$set": {
+
+                "metadata.master_record_id":
+                    record_id,
+
+                "metadata.master_record_status":
+                    "approved",
+
+                "metadata.validation_status":
+                    validation_result[
+                        "status"
+                    ],
+
+                "metadata.validation_issue_count":
+                    validation_result[
+                        "issue_count"
+                    ],
+
+                "metadata.approved_by":
+                    str(
+                        current_user.id
+                    ),
+
+                "metadata.approved_at":
+                    now,
+            }
+        },
+    )
+
+    # ========================================================
+    # 16. UPDATE VERIFICATION TASK
+    # ========================================================
 
     db.verification_tasks.update_one(
         {
@@ -766,26 +1051,60 @@ def approve_master_record(
         },
         {
             "$set": {
-                "status": "master_record_approved",
-                "master_record_id": record_id,
-                "approved_by": str(
-                    current_user.id
-                ),
-                "approved_at": now,
-                "updated_at": now,
+
+                "status":
+                    "master_record_approved",
+
+                "master_record_id":
+                    record_id,
+
+                "approved_by":
+                    str(
+                        current_user.id
+                    ),
+
+                "approved_at":
+                    now,
+
+                "validation_status":
+                    validation_result[
+                        "status"
+                    ],
+
+                "updated_at":
+                    now,
             }
         },
     )
+
+    # ========================================================
+    # 17. RESPONSE
+    # ========================================================
+
+    warning_text = ""
+
+    if (
+        validation_result[
+            "status"
+        ]
+        == "warning"
+    ):
+
+        warning_text = (
+            " Validation completed with "
+            f"{validation_result['warning_count']} "
+            "warning(s)."
+        )
 
     return MessageResponse(
         message=(
             f"Land Record for Khasra "
             f"{master_record['khasra_number']} "
-            f"successfully approved and committed "
-            f"to Master Registry."
+            f"successfully validated and "
+            f"committed to Master Registry."
+            f"{warning_text}"
         )
     )
-
 
 # ============================================================
 # MASTER RECORD LIST

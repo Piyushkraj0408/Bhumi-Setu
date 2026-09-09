@@ -4,7 +4,17 @@ Creates the base roles/permissions and grants them per the hierarchy.
 Seeds default test users for all 6 administration roles.
 """
 
+import os
 import sys
+
+# Ensure project root is on sys.path when executed directly
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 from pymongo.errors import OperationFailure, ServerSelectionTimeoutError
 from app.core.config import settings
 from app.core.database import get_mongo_database, init_db
@@ -120,6 +130,62 @@ SAMPLE_MASTER_RECORDS = [
         "total_area_sq_meters": 8093.72,
         "status": "approved",
         "tehsil_code": "TH-HAVELI",
+    },
+    {
+        "record_id": "LR-2018-155",
+        "document_id": "doc-demo-1",
+        "khasra_number": "155",
+        "khata_number": "41",
+        "owner_name": "राधेश्याम सिंह (Radheshyam Singh)",
+        "father_or_husband_name": "स्व० रामविलास सिंह",
+        "village": "आसोपुर (Asopur)",
+        "tehsil": "दानापुर (Danapur)",
+        "district": "पटना (Patna)",
+        "total_area_sq_meters": 1011.71,
+        "status": "approved",
+        "tehsil_code": "TH-DANAPUR",
+    },
+    {
+        "record_id": "LR-2019-156",
+        "document_id": "doc-demo-2",
+        "khasra_number": "156",
+        "khata_number": "19",
+        "owner_name": "अजय सिंह (Ajay Singh)",
+        "father_or_husband_name": "स्व० भोला सिंह",
+        "village": "आसोपुर (Asopur)",
+        "tehsil": "दानापुर (Danapur)",
+        "district": "पटना (Patna)",
+        "total_area_sq_meters": 232.7,
+        "status": "approved",
+        "tehsil_code": "TH-DANAPUR",
+    },
+    {
+        "record_id": "LR-2015-427",
+        "document_id": "doc-demo-3",
+        "khasra_number": "427",
+        "khata_number": "24",
+        "owner_name": "दशरथ प्रसाद रामनन्दन पाण्डेय",
+        "father_or_husband_name": "स्व० शंभूनाथ पाण्डेय",
+        "village": "ददईया (Dadaiya)",
+        "tehsil": "औरंगाबाद (Aurangabad)",
+        "district": "औरंगाबाद (Aurangabad)",
+        "total_area_sq_meters": 4046.86,
+        "status": "approved",
+        "tehsil_code": "TH-AURANGABAD",
+    },
+    {
+        "record_id": "LR-1998-112",
+        "document_id": "doc-demo-4",
+        "khasra_number": "112",
+        "khata_number": "48",
+        "owner_name": "रामेश्वर प्रसाद (Rameshwar Prasad)",
+        "father_or_husband_name": "स्व० हरि लाल",
+        "village": "गैरपुर (Gairpur)",
+        "tehsil": "बिलारी (Bilari)",
+        "district": "मुरादाबाद (Moradabad)",
+        "total_area_sq_meters": 7800.0,
+        "status": "approved",
+        "tehsil_code": "TH-BILARI",
     },
 ]
 
