@@ -82,187 +82,10 @@ export interface RecordSearchFilters {
 }
 
 // ---------------------------------------------------------------------------
-// Verified Default Land Records (includes Demo Files 1, 2, 3, 4)
+// Verified Default Land Records
 // ---------------------------------------------------------------------------
 
-const DEFAULT_RECORDS: LandRecord[] = [
-  // ── DEMO FILE 2: Khasra 156 (अजय सिंह — दानापुर, पटना, बिहार) ──
-  {
-    id: "LR-2019-156",
-    documentId: "DOC-DEMO-156",
-    owner: "अजय सिंह (Ajay Singh)",
-    fatherOrHusbandName: "स्व० भोला सिंह",
-    coOwners: [],
-    surveyNumber: "156",
-    khasraNumber: "156",
-    khataNumber: "19",
-    area: 0.0575,
-    areaUnit: "Acres",
-    landType: "Agricultural",
-    location: { state: "Bihar", district: "Patna", tehsil: "Danapur", village: "Asopur" },
-    status: "Verified",
-    ocrConfidence: 97,
-    extractionConfidence: 96,
-    validationStatus: "passed",
-    gisConfidence: 95,
-  },
-  // ── DEMO FILE 1: Khasra 155 (राधेश्याम सिंह — दानापुर, पटना, बिहार) ──
-  {
-    id: "LR-2018-155",
-    documentId: "DOC-DEMO-155",
-    owner: "राधेश्याम सिंह (Radheshyam Singh)",
-    fatherOrHusbandName: "स्व० रामविलास सिंह",
-    coOwners: [],
-    surveyNumber: "155",
-    khasraNumber: "155",
-    khataNumber: "41",
-    area: 0.25,
-    areaUnit: "Acres",
-    landType: "Agricultural",
-    location: { state: "Bihar", district: "Patna", tehsil: "Danapur", village: "Asopur" },
-    status: "Verified",
-    ocrConfidence: 97,
-    extractionConfidence: 96,
-    validationStatus: "passed",
-    gisConfidence: 96,
-  },
-  // ── DEMO FILE 3: Khasra 427, 429 (दशरथ प्रसाद — औरंगाबाद, बिहार) ──
-  {
-    id: "LR-2015-427",
-    documentId: "DOC-DEMO-427",
-    owner: "दशरथ प्रसाद रामनन्दन पाण्डेय",
-    fatherOrHusbandName: "स्व० शंभूनाथ पाण्डेय",
-    coOwners: [],
-    surveyNumber: "427, 429",
-    khasraNumber: "427",
-    khataNumber: "24",
-    area: 1.00,
-    areaUnit: "Acres",
-    landType: "Agricultural",
-    location: { state: "Bihar", district: "Aurangabad", tehsil: "Aurangabad", village: "Dadaiya" },
-    status: "Verified",
-    ocrConfidence: 94,
-    extractionConfidence: 95,
-    validationStatus: "passed",
-    gisConfidence: 93,
-  },
-  // ── DEMO FILE 4: Khasra 112 (रामेश्वर प्रसाद — बिलारी, मुरादाबाद, UP) ──
-  {
-    id: "LR-1998-112",
-    documentId: "DOC-DEMO-112",
-    owner: "रामेश्वर प्रसाद (Rameshwar Prasad)",
-    fatherOrHusbandName: "स्व० हरि लाल",
-    coOwners: [],
-    surveyNumber: "112",
-    khasraNumber: "112",
-    khataNumber: "48",
-    area: 1.93,
-    areaUnit: "Acres",
-    landType: "Agricultural",
-    location: { state: "Uttar Pradesh", district: "Moradabad", tehsil: "Bilari", village: "Gairpur" },
-    status: "Verified",
-    ocrConfidence: 94,
-    extractionConfidence: 92,
-    validationStatus: "passed",
-    gisConfidence: 91,
-  },
-  // ── Standard Master Records ──
-  {
-    id: "LR-2024-1",
-    documentId: "DOC-2024-1001",
-    owner: "Ramesh Patil",
-    fatherOrHusbandName: "Ganpat Patil",
-    coOwners: ["Sunita Patil"],
-    surveyNumber: "42/1",
-    khasraNumber: "42/1",
-    khataNumber: "108",
-    area: 2.45,
-    areaUnit: "Acres",
-    landType: "Agricultural",
-    location: { state: "Maharashtra", district: "Pune", tehsil: "Haveli", village: "Haveli" },
-    status: "Verified",
-    ocrConfidence: 96,
-    extractionConfidence: 94,
-    validationStatus: "passed",
-    gisConfidence: 92,
-  },
-  {
-    id: "LR-2024-2",
-    documentId: "DOC-2024-1002",
-    owner: "Anand Rao",
-    fatherOrHusbandName: "Venkatesh Rao",
-    coOwners: [],
-    surveyNumber: "108/B",
-    khasraNumber: "108/B",
-    khataNumber: "214",
-    area: 1.80,
-    areaUnit: "Acres",
-    landType: "Agricultural",
-    location: { state: "Maharashtra", district: "Pune", tehsil: "Haveli", village: "Wagholi" },
-    status: "Verified",
-    ocrConfidence: 94,
-    extractionConfidence: 91,
-    validationStatus: "passed",
-    gisConfidence: 89,
-  },
-  {
-    id: "LR-2024-3",
-    documentId: "DOC-2024-1003",
-    owner: "Suresh Patil",
-    fatherOrHusbandName: "Ramchandra Patil",
-    coOwners: ["Meena Patil"],
-    surveyNumber: "77/3",
-    khasraNumber: "77/3",
-    khataNumber: "92",
-    area: 4.12,
-    areaUnit: "Acres",
-    landType: "Commercial",
-    location: { state: "Maharashtra", district: "Pune", tehsil: "Mulshi", village: "Hinjewadi" },
-    status: "Verified",
-    ocrConfidence: 98,
-    extractionConfidence: 96,
-    validationStatus: "passed",
-    gisConfidence: 95,
-  },
-  {
-    id: "LR-2024-4",
-    documentId: "DOC-2024-1004",
-    owner: "Sunita Sharma",
-    fatherOrHusbandName: "Omprakash Sharma",
-    coOwners: [],
-    surveyNumber: "15/2",
-    khasraNumber: "15/2",
-    khataNumber: "55",
-    area: 1.00,
-    areaUnit: "Acres",
-    landType: "Agricultural",
-    location: { state: "Maharashtra", district: "Pune", tehsil: "Haveli", village: "Kothrud" },
-    status: "Verified",
-    ocrConfidence: 91,
-    extractionConfidence: 88,
-    validationStatus: "passed",
-    gisConfidence: 86,
-  },
-  {
-    id: "LR-2024-5",
-    documentId: "DOC-2024-1005",
-    owner: "Pooja Deshmukh",
-    fatherOrHusbandName: "Pratap Deshmukh",
-    coOwners: [],
-    surveyNumber: "91/A",
-    khasraNumber: "91/A",
-    khataNumber: "301",
-    area: 2.00,
-    areaUnit: "Acres",
-    landType: "Agricultural",
-    location: { state: "Maharashtra", district: "Pune", tehsil: "Haveli", village: "Shivajinagar" },
-    status: "Verified",
-    ocrConfidence: 95,
-    extractionConfidence: 92,
-    validationStatus: "passed",
-    gisConfidence: 90,
-  },
-];
+const DEFAULT_RECORDS: LandRecord[] = [];
 
 // Cached results so single-record lookup doesn't need a second API call
 let _cachedRecords: LandRecord[] = [];
@@ -281,11 +104,11 @@ export async function searchRecords(filters: RecordSearchFilters = {}) {
   // Load dynamically anchored / verified documents from localStorage
   const completedRecords = getCompletedRecords().map((c) => {
     const d = c.recordDetails;
-    const khasra = d?.khasraNumber || "156";
-    const khata = d?.khataNumber || "19";
+    const khasra = d?.khasraNumber || "—";
+    const khata = d?.khataNumber || "—";
     const owner = d?.ownerName || c.officer;
     const father = d?.fatherName || "—";
-    const areaNum = parseFloat(d?.areaHectares || "0.0575") || 1.0;
+    const areaNum = parseFloat(d?.areaHectares || "0") || 1.0;
 
     return {
       id: c.recordNumber || c.id,

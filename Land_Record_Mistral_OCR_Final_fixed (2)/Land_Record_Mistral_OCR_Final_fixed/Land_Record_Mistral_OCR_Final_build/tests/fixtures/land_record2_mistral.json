@@ -1,0 +1,475 @@
+{
+  "schema_version": "1.0",
+  "document": {
+    "document_id": "sha256:1554c6e63a3bbae4225b0196ef5b415a4a7981d3fc4d48097178f6a3348a302c",
+    "filename": "land_record2.pdf",
+    "pages": 1,
+    "language": [
+      "hi",
+      "en"
+    ]
+  },
+  "processing": {
+    "status": "completed",
+    "engine": "mistral-ocr-latest",
+    "processing_time_ms": 5257
+  },
+  "pages": [
+    {
+      "page_number": 1,
+      "text": "92\n31/5/19\n\nगोपनीय प्रतिवेदन\n\n# अंचल पदाधिकारी का कार्यालय\n\nभू-स्वामित्व प्रमाण-पत्र\n\nनाम अजय सिंह    पिता/पति स्व० गोला सिंह\n\nग्राम आशोपुर\n\nथाना दानापुर    जिला पटना\n\n[tbl-0.md](tbl-0.md)\n\nआवेदक का हस्ताक्षर\nअजय सिंह\n\nकार्यालय का मुहर\n\n![img-0.jpeg](img-0.jpeg)\n\nकर्मचारी का प्रतिवेदन\n\nअंचल पदाधिकारी का हस्ताक्षर\n\nDirector\nSWAPN VIHAR PVT. LTD.",
+      "confidence": 0.9587977808950237,
+      "min_confidence": 0.18581018229746807,
+      "blocks": [
+        {
+          "type": "header",
+          "bbox": [
+            423,
+            31,
+            518,
+            89
+          ],
+          "text": "92\n31/5/19",
+          "confidence": 0.9250622850461845,
+          "min_confidence": 0.7949264397032717,
+          "block_type_confidence": 0.8778128966000416
+        },
+        {
+          "type": "header",
+          "bbox": [
+            576,
+            78,
+            701,
+            101
+          ],
+          "text": "गोपनीय प्रतिवेदन",
+          "confidence": 0.9998433485566229,
+          "min_confidence": 0.9997749222265716,
+          "block_type_confidence": 0.9986388363660154
+        },
+        {
+          "type": "title",
+          "bbox": [
+            86,
+            104,
+            660,
+            158
+          ],
+          "text": "# अंचल पदाधिकारी का कार्यालय",
+          "confidence": 0.9996833555861935,
+          "min_confidence": 0.9994611327777434,
+          "block_type_confidence": 0.9999711521845835
+        },
+        {
+          "type": "text",
+          "bbox": [
+            266,
+            174,
+            462,
+            204
+          ],
+          "text": "भू-स्वामित्व प्रमाण-पत्र",
+          "confidence": 0.9998482627334341,
+          "min_confidence": 0.9997826157026091,
+          "block_type_confidence": 0.4949618708066501
+        },
+        {
+          "type": "text",
+          "bbox": [
+            65,
+            225,
+            693,
+            262
+          ],
+          "text": "नाम अजय सिंह    पिता/पति स्व० गोला सिंह",
+          "confidence": 0.6717591345226871,
+          "min_confidence": 0.338021348255109,
+          "block_type_confidence": 0.9999624504845601
+        },
+        {
+          "type": "text",
+          "bbox": [
+            65,
+            265,
+            693,
+            296
+          ],
+          "text": "ग्राम आशोपुर",
+          "confidence": 0.8529844568866106,
+          "min_confidence": 0.7060349265021464,
+          "block_type_confidence": 0.9999976158197796
+        },
+        {
+          "type": "text",
+          "bbox": [
+            65,
+            292,
+            702,
+            323
+          ],
+          "text": "थाना दानापुर    जिला पटना",
+          "confidence": 0.9280755214399604,
+          "min_confidence": 0.739282962235933,
+          "block_type_confidence": 0.999991059383269
+        },
+        {
+          "type": "table",
+          "bbox": [
+            44,
+            319,
+            736,
+            783
+          ],
+          "text": "|  ग्राम का नाम एवं थाना संख्या | तौजी संख्या | खाता संख्या | खेसरा संख्या | रकवा  |   |\n| --- | --- | --- | --- | --- | --- |\n|   |   |   |   |  एकड़ | डि०  |\n|  आशोपुर, थाना सं०-34 |  | 19 | 156 |  | 5.75  |",
+          "confidence": 0.9829530595123016,
+          "min_confidence": 0.8587377501917688,
+          "block_type_confidence": 0.9999927282861518
+        },
+        {
+          "type": "text",
+          "bbox": [
+            65,
+            786,
+            230,
+            836
+          ],
+          "text": "आवेदक का हस्ताक्षर\nअजय सिंह",
+          "confidence": 0.9867379618891655,
+          "min_confidence": 0.9260140315254054,
+          "block_type_confidence": 0.9621798301171919
+        },
+        {
+          "type": "text",
+          "bbox": [
+            72,
+            862,
+            215,
+            889
+          ],
+          "text": "कार्यालय का मुहर",
+          "confidence": 0.9994269706375357,
+          "min_confidence": 0.9983161822917533,
+          "block_type_confidence": 0.9577057653377669
+        },
+        {
+          "type": "image",
+          "bbox": [
+            270,
+            821,
+            401,
+            956
+          ],
+          "text": "![img-0.jpeg](img-0.jpeg)",
+          "confidence": null,
+          "min_confidence": null,
+          "block_type_confidence": 0.6223264280579052
+        },
+        {
+          "type": "text",
+          "bbox": [
+            496,
+            790,
+            666,
+            817
+          ],
+          "text": "कर्मचारी का प्रतिवेदन",
+          "confidence": 0.999833987916635,
+          "min_confidence": 0.9996137878340342,
+          "block_type_confidence": 0.9893841160239064
+        },
+        {
+          "type": "text",
+          "bbox": [
+            466,
+            866,
+            705,
+            892
+          ],
+          "text": "अंचल पदाधिकारी का हस्ताक्षर",
+          "confidence": 0.99995927379064,
+          "min_confidence": 0.9999250376034121,
+          "block_type_confidence": 0.9574591597802997
+        },
+        {
+          "type": "footer",
+          "bbox": [
+            488,
+            917,
+            664,
+            989
+          ],
+          "text": "Director\nSWAPN VIHAR PVT. LTD.",
+          "confidence": 0.9954262698589115,
+          "min_confidence": 0.9785582038923508,
+          "block_type_confidence": 0.9729817890858715
+        }
+      ],
+      "tables": [
+        {
+          "id": "tbl-0.md",
+          "content": "|  ग्राम का नाम एवं थाना संख्या | तौजी संख्या | खाता संख्या | खेसरा संख्या | रकवा  |   |\n| --- | --- | --- | --- | --- | --- |\n|   |   |   |   |  एकड़ | डि०  |\n|  आशोपुर, थाना सं०-34 |  | 19 | 156 |  | 5.75  |",
+          "format": "markdown",
+          "word_confidence_scores": null
+        }
+      ],
+      "images": [
+        {
+          "id": "img-0.jpeg",
+          "top_left_x": 270,
+          "top_left_y": 821,
+          "bottom_right_x": 401,
+          "bottom_right_y": 956,
+          "image_base64": null,
+          "image_annotation": null
+        }
+      ],
+      "dimensions": {
+        "dpi": 93,
+        "height": 1023,
+        "width": 791
+      },
+      "header": null,
+      "footer": null
+    }
+  ],
+  "extracted_fields": {},
+  "warnings": [],
+  "review_required": false,
+  "raw_ocr": {
+    "pages": [
+      {
+        "index": 0,
+        "markdown": "92\n31/5/19\n\nगोपनीय प्रतिवेदन\n\n# अंचल पदाधिकारी का कार्यालय\n\nभू-स्वामित्व प्रमाण-पत्र\n\nनाम अजय सिंह    पिता/पति स्व० गोला सिंह\n\nग्राम आशोपुर\n\nथाना दानापुर    जिला पटना\n\n[tbl-0.md](tbl-0.md)\n\nआवेदक का हस्ताक्षर\nअजय सिंह\n\nकार्यालय का मुहर\n\n![img-0.jpeg](img-0.jpeg)\n\nकर्मचारी का प्रतिवेदन\n\nअंचल पदाधिकारी का हस्ताक्षर\n\nDirector\nSWAPN VIHAR PVT. LTD.",
+        "images": [
+          {
+            "id": "img-0.jpeg",
+            "top_left_x": 270,
+            "top_left_y": 821,
+            "bottom_right_x": 401,
+            "bottom_right_y": 956,
+            "image_base64": null,
+            "image_annotation": null
+          }
+        ],
+        "tables": [
+          {
+            "id": "tbl-0.md",
+            "content": "|  ग्राम का नाम एवं थाना संख्या | तौजी संख्या | खाता संख्या | खेसरा संख्या | रकवा  |   |\n| --- | --- | --- | --- | --- | --- |\n|   |   |   |   |  एकड़ | डि०  |\n|  आशोपुर, थाना सं०-34 |  | 19 | 156 |  | 5.75  |",
+            "format": "markdown",
+            "word_confidence_scores": null
+          }
+        ],
+        "hyperlinks": [],
+        "header": null,
+        "footer": null,
+        "dimensions": {
+          "dpi": 93,
+          "height": 1023,
+          "width": 791
+        },
+        "confidence_scores": {
+          "word_confidence_scores": [],
+          "average_page_confidence_score": 0.9587977808950237,
+          "minimum_page_confidence_score": 0.18581018229746807
+        },
+        "blocks": [
+          {
+            "top_left_x": 423,
+            "top_left_y": 31,
+            "bottom_right_x": 518,
+            "bottom_right_y": 89,
+            "content": "92\n31/5/19",
+            "confidence_scores": {
+              "average_content_confidence_score": 0.9250622850461845,
+              "minimum_content_confidence_score": 0.7949264397032717,
+              "block_type_confidence_score": 0.8778128966000416
+            },
+            "type": "header"
+          },
+          {
+            "top_left_x": 576,
+            "top_left_y": 78,
+            "bottom_right_x": 701,
+            "bottom_right_y": 101,
+            "content": "गोपनीय प्रतिवेदन",
+            "confidence_scores": {
+              "average_content_confidence_score": 0.9998433485566229,
+              "minimum_content_confidence_score": 0.9997749222265716,
+              "block_type_confidence_score": 0.9986388363660154
+            },
+            "type": "header"
+          },
+          {
+            "top_left_x": 86,
+            "top_left_y": 104,
+            "bottom_right_x": 660,
+            "bottom_right_y": 158,
+            "content": "# अंचल पदाधिकारी का कार्यालय",
+            "confidence_scores": {
+              "average_content_confidence_score": 0.9996833555861935,
+              "minimum_content_confidence_score": 0.9994611327777434,
+              "block_type_confidence_score": 0.9999711521845835
+            },
+            "type": "title"
+          },
+          {
+            "top_left_x": 266,
+            "top_left_y": 174,
+            "bottom_right_x": 462,
+            "bottom_right_y": 204,
+            "content": "भू-स्वामित्व प्रमाण-पत्र",
+            "confidence_scores": {
+              "average_content_confidence_score": 0.9998482627334341,
+              "minimum_content_confidence_score": 0.9997826157026091,
+              "block_type_confidence_score": 0.4949618708066501
+            },
+            "type": "text"
+          },
+          {
+            "top_left_x": 65,
+            "top_left_y": 225,
+            "bottom_right_x": 693,
+            "bottom_right_y": 262,
+            "content": "नाम अजय सिंह    पिता/पति स्व० गोला सिंह",
+            "confidence_scores": {
+              "average_content_confidence_score": 0.6717591345226871,
+              "minimum_content_confidence_score": 0.338021348255109,
+              "block_type_confidence_score": 0.9999624504845601
+            },
+            "type": "text"
+          },
+          {
+            "top_left_x": 65,
+            "top_left_y": 265,
+            "bottom_right_x": 693,
+            "bottom_right_y": 296,
+            "content": "ग्राम आशोपुर",
+            "confidence_scores": {
+              "average_content_confidence_score": 0.8529844568866106,
+              "minimum_content_confidence_score": 0.7060349265021464,
+              "block_type_confidence_score": 0.9999976158197796
+            },
+            "type": "text"
+          },
+          {
+            "top_left_x": 65,
+            "top_left_y": 292,
+            "bottom_right_x": 702,
+            "bottom_right_y": 323,
+            "content": "थाना दानापुर    जिला पटना",
+            "confidence_scores": {
+              "average_content_confidence_score": 0.9280755214399604,
+              "minimum_content_confidence_score": 0.739282962235933,
+              "block_type_confidence_score": 0.999991059383269
+            },
+            "type": "text"
+          },
+          {
+            "top_left_x": 44,
+            "top_left_y": 319,
+            "bottom_right_x": 736,
+            "bottom_right_y": 783,
+            "content": "|  ग्राम का नाम एवं थाना संख्या | तौजी संख्या | खाता संख्या | खेसरा संख्या | रकवा  |   |\n| --- | --- | --- | --- | --- | --- |\n|   |   |   |   |  एकड़ | डि०  |\n|  आशोपुर, थाना सं०-34 |  | 19 | 156 |  | 5.75  |",
+            "confidence_scores": {
+              "average_content_confidence_score": 0.9829530595123016,
+              "minimum_content_confidence_score": 0.8587377501917688,
+              "block_type_confidence_score": 0.9999927282861518
+            },
+            "type": "table",
+            "table_id": "tbl-0.md"
+          },
+          {
+            "top_left_x": 65,
+            "top_left_y": 786,
+            "bottom_right_x": 230,
+            "bottom_right_y": 836,
+            "content": "आवेदक का हस्ताक्षर\nअजय सिंह",
+            "confidence_scores": {
+              "average_content_confidence_score": 0.9867379618891655,
+              "minimum_content_confidence_score": 0.9260140315254054,
+              "block_type_confidence_score": 0.9621798301171919
+            },
+            "type": "text"
+          },
+          {
+            "top_left_x": 72,
+            "top_left_y": 862,
+            "bottom_right_x": 215,
+            "bottom_right_y": 889,
+            "content": "कार्यालय का मुहर",
+            "confidence_scores": {
+              "average_content_confidence_score": 0.9994269706375357,
+              "minimum_content_confidence_score": 0.9983161822917533,
+              "block_type_confidence_score": 0.9577057653377669
+            },
+            "type": "text"
+          },
+          {
+            "top_left_x": 270,
+            "top_left_y": 821,
+            "bottom_right_x": 401,
+            "bottom_right_y": 956,
+            "content": "![img-0.jpeg](img-0.jpeg)",
+            "confidence_scores": {
+              "average_content_confidence_score": null,
+              "minimum_content_confidence_score": null,
+              "block_type_confidence_score": 0.6223264280579052
+            },
+            "type": "image",
+            "image_id": "img-0.jpeg"
+          },
+          {
+            "top_left_x": 496,
+            "top_left_y": 790,
+            "bottom_right_x": 666,
+            "bottom_right_y": 817,
+            "content": "कर्मचारी का प्रतिवेदन",
+            "confidence_scores": {
+              "average_content_confidence_score": 0.999833987916635,
+              "minimum_content_confidence_score": 0.9996137878340342,
+              "block_type_confidence_score": 0.9893841160239064
+            },
+            "type": "text"
+          },
+          {
+            "top_left_x": 466,
+            "top_left_y": 866,
+            "bottom_right_x": 705,
+            "bottom_right_y": 892,
+            "content": "अंचल पदाधिकारी का हस्ताक्षर",
+            "confidence_scores": {
+              "average_content_confidence_score": 0.99995927379064,
+              "minimum_content_confidence_score": 0.9999250376034121,
+              "block_type_confidence_score": 0.9574591597802997
+            },
+            "type": "text"
+          },
+          {
+            "top_left_x": 488,
+            "top_left_y": 917,
+            "bottom_right_x": 664,
+            "bottom_right_y": 989,
+            "content": "Director\nSWAPN VIHAR PVT. LTD.",
+            "confidence_scores": {
+              "average_content_confidence_score": 0.9954262698589115,
+              "minimum_content_confidence_score": 0.9785582038923508,
+              "block_type_confidence_score": 0.9729817890858715
+            },
+            "type": "footer"
+          }
+        ]
+      }
+    ],
+    "model": "mistral-ocr-latest",
+    "document_annotation": null,
+    "usage_info": {
+      "pages_processed": 1,
+      "doc_size_bytes": 110402
+    }
+  },
+  "mistral_file": {
+    "id": "84e80242-208d-4fbd-8abd-66a58752205d",
+    "filename": "land_record2.pdf",
+    "purpose": "ocr"
+  }
+}

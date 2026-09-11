@@ -105,7 +105,7 @@ export function VerificationWorkspacePage() {
                 onClick={() => setActiveField(f.id)}
                 className={`rounded-md border p-3 cursor-pointer transition-colors ${
                   activeField === f.id ? "border-brand-400 bg-brand-50" : "border-slate-200"
-                } ${f.confidence < 70 ? "border-l-4 border-l-danger-500" : ""}`}
+                } ${f.confidence < 65 ? "border-l-4 border-l-danger-500" : f.confidence < 85 ? "border-l-4 border-l-warning-500" : ""}`}
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs text-slate-500">{f.label}</label>

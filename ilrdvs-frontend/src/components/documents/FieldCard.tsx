@@ -18,7 +18,11 @@ export function FieldCard({
       className={cn(
         "w-full text-left rounded-md border px-3.5 py-3 transition-colors",
         active ? "survey-mark border-brand-400 bg-brand-50" : "border-slate-200 bg-white hover:bg-slate-50",
-        field.confidence < 70 && "border-l-4 border-l-danger-500"
+        field.confidence < 65
+          ? "border-l-4 border-l-danger-500"
+          : field.confidence < 85
+          ? "border-l-4 border-l-warning-500"
+          : ""
       )}
     >
       <div className="flex items-center justify-between gap-2">
@@ -27,14 +31,14 @@ export function FieldCard({
       </div>
       <p className={cn("text-sm font-semibold text-navy-900 mt-1", /number/i.test(field.label) && "font-ids")}>{field.value}</p>
       <div className="flex items-center gap-1.5 mt-1.5">
-        {field.validationStatus === "passed" ? (
+        {field.confidence >= 85 ? (
           <span className="flex items-center gap-1 text-[11px] text-success-600 font-medium">
             <CheckCircle2 className="h-3 w-3" /> Validated
           </span>
-        ) : field.validationStatus === "warning" ? (
-          <span className="text-[11px] text-warning-600 font-medium">Needs review</span>
+        ) : field.confidence >= 65 ? (
+          <span className="text-[11px] text-warning-600 font-medium">⚠ Medium Warning</span>
         ) : (
-          <span className="text-[11px] text-danger-500 font-medium">Validation failed</span>
+          <span className="text-[11px] text-danger-500 font-medium">🔴 Critical Warning</span>
         )}
         <span className="text-[11px] text-slate-300">·</span>
         <span className="text-[11px] text-slate-400">Source: {field.source}</span>

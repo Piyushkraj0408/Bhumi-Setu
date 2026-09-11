@@ -1,5 +1,4 @@
 """Run once against a fresh MongoDB database: python -m scripts.seed_roles
-
 Creates the base roles/permissions and grants them per the hierarchy.
 Seeds default test users for all 6 administration roles.
 """
@@ -60,134 +59,7 @@ DEFAULT_TEST_USERS = [
     ("auditor@gov.in", "Auditor123!", "Vigilance Auditor", "auditor", None, None),
 ]
 
-SAMPLE_MASTER_RECORDS = [
-    {
-        "record_id": "LR-2024-1",
-        "document_id": "doc-sample-1",
-        "khasra_number": "42/1",
-        "khata_number": "108",
-        "owner_name": "Ramesh Patil",
-        "father_or_husband_name": "Ganpat Patil",
-        "village": "Haveli",
-        "tehsil": "Haveli",
-        "district": "Pune",
-        "total_area_sq_meters": 9914.8,
-        "status": "approved",
-        "tehsil_code": "TH-HAVELI",
-    },
-    {
-        "record_id": "LR-2024-2",
-        "document_id": "doc-sample-2",
-        "khasra_number": "108/B",
-        "khata_number": "214",
-        "owner_name": "Anand Rao",
-        "father_or_husband_name": "Venkatesh Rao",
-        "village": "Wagholi",
-        "tehsil": "Haveli",
-        "district": "Pune",
-        "total_area_sq_meters": 7284.3,
-        "status": "approved",
-        "tehsil_code": "TH-HAVELI",
-    },
-    {
-        "record_id": "LR-2024-3",
-        "document_id": "doc-sample-3",
-        "khasra_number": "77/3",
-        "khata_number": "92",
-        "owner_name": "Suresh Patil",
-        "father_or_husband_name": "Ramchandra Patil",
-        "village": "Hinjewadi",
-        "tehsil": "Mulshi",
-        "district": "Pune",
-        "total_area_sq_meters": 16673.1,
-        "status": "approved",
-        "tehsil_code": "TH-MULSHI",
-    },
-    {
-        "record_id": "LR-2024-4",
-        "document_id": "doc-sample-4",
-        "khasra_number": "15/2",
-        "khata_number": "55",
-        "owner_name": "Sunita Sharma",
-        "father_or_husband_name": "Omprakash Sharma",
-        "village": "Kothrud",
-        "tehsil": "Haveli",
-        "district": "Pune",
-        "total_area_sq_meters": 4046.86,
-        "status": "approved",
-        "tehsil_code": "TH-HAVELI",
-    },
-    {
-        "record_id": "LR-2024-5",
-        "document_id": "doc-sample-5",
-        "khasra_number": "91/A",
-        "khata_number": "301",
-        "owner_name": "Pooja Deshmukh",
-        "father_or_husband_name": "Pratap Deshmukh",
-        "village": "Shivajinagar",
-        "tehsil": "Haveli",
-        "district": "Pune",
-        "total_area_sq_meters": 8093.72,
-        "status": "approved",
-        "tehsil_code": "TH-HAVELI",
-    },
-    {
-        "record_id": "LR-2018-155",
-        "document_id": "doc-demo-1",
-        "khasra_number": "155",
-        "khata_number": "41",
-        "owner_name": "राधेश्याम सिंह (Radheshyam Singh)",
-        "father_or_husband_name": "स्व० रामविलास सिंह",
-        "village": "आसोपुर (Asopur)",
-        "tehsil": "दानापुर (Danapur)",
-        "district": "पटना (Patna)",
-        "total_area_sq_meters": 1011.71,
-        "status": "approved",
-        "tehsil_code": "TH-DANAPUR",
-    },
-    {
-        "record_id": "LR-2019-156",
-        "document_id": "doc-demo-2",
-        "khasra_number": "156",
-        "khata_number": "19",
-        "owner_name": "अजय सिंह (Ajay Singh)",
-        "father_or_husband_name": "स्व० भोला सिंह",
-        "village": "आसोपुर (Asopur)",
-        "tehsil": "दानापुर (Danapur)",
-        "district": "पटना (Patna)",
-        "total_area_sq_meters": 232.7,
-        "status": "approved",
-        "tehsil_code": "TH-DANAPUR",
-    },
-    {
-        "record_id": "LR-2015-427",
-        "document_id": "doc-demo-3",
-        "khasra_number": "427",
-        "khata_number": "24",
-        "owner_name": "दशरथ प्रसाद रामनन्दन पाण्डेय",
-        "father_or_husband_name": "स्व० शंभूनाथ पाण्डेय",
-        "village": "ददईया (Dadaiya)",
-        "tehsil": "औरंगाबाद (Aurangabad)",
-        "district": "औरंगाबाद (Aurangabad)",
-        "total_area_sq_meters": 4046.86,
-        "status": "approved",
-        "tehsil_code": "TH-AURANGABAD",
-    },
-    {
-        "record_id": "LR-1998-112",
-        "document_id": "doc-demo-4",
-        "khasra_number": "112",
-        "khata_number": "48",
-        "owner_name": "रामेश्वर प्रसाद (Rameshwar Prasad)",
-        "father_or_husband_name": "स्व० हरि लाल",
-        "village": "गैरपुर (Gairpur)",
-        "tehsil": "बिलारी (Bilari)",
-        "district": "मुरादाबाद (Moradabad)",
-        "total_area_sq_meters": 7800.0,
-        "status": "approved",
-        "tehsil_code": "TH-BILARI",
-    },
-]
+SAMPLE_MASTER_RECORDS: list[dict] = []
 
 
 def seed():
@@ -238,21 +110,22 @@ def seed():
             else:
                 print(f" -> User exists: {email}")
 
-        print("\n[5/5] Seeding verified master land records...")
-        from datetime import datetime, timezone
-        now_dt = datetime.now(timezone.utc)
-        for r in SAMPLE_MASTER_RECORDS:
-            r_doc = r.copy()
-            r_doc["created_at"] = now_dt
-            r_doc["last_updated"] = now_dt
-            db.master_records.update_one(
-                {"record_id": r["record_id"]},
-                {"$set": r_doc},
-                upsert=True,
-            )
-            print(f" -> Master record synced: {r['record_id']} (Khasra {r['khasra_number']} - {r['owner_name']})")
+        if SAMPLE_MASTER_RECORDS:
+            print("\n[5/5] Seeding verified master land records...")
+            from datetime import datetime, timezone
+            now_dt = datetime.now(timezone.utc)
+            for r in SAMPLE_MASTER_RECORDS:
+                r_doc = r.copy()
+                r_doc["created_at"] = now_dt
+                r_doc["last_updated"] = now_dt
+                db.master_records.update_one(
+                    {"record_id": r["record_id"]},
+                    {"$set": r_doc},
+                    upsert=True,
+                )
+                print(f" -> Master record synced: {r['record_id']} (Khasra {r['khasra_number']} - {r['owner_name']})")
 
-        print("\nSUCCESS: MongoDB Database Seeded Successfully!")
+        print("\nSUCCESS: MongoDB Database Seeded Successfully (Roles & Permissions)!")
 
     except OperationFailure as e:
         print(f"\n[ERROR] MongoDB Authentication Failed: {e.details.get('errmsg', str(e))}")

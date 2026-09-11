@@ -137,6 +137,29 @@ def get_document(
 
 
 @router.get(
+    "/{document_id}/ocr",
+    dependencies=[Depends(require_permission("VIEW_RECORD"))],
+)
+def get_document_ocr(
+    document_id: uuid.UUID,
+    db: Database = Depends(get_db),
+    current_user: MongoUser = Depends(get_current_user),
+):
+    doc_id_str = str(document_id)
+    scoped_query = build_scoped_id_query(doc_id_str, current_user)
+    doc = db.documents.find_one(scoped_query)
+    if not doc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Document not found")
+
+    return {
+        "document_id": doc_id_str,
+        "status": doc.get("status"),
+        "ocr": doc.get("ocr") or {},
+        "metadata": doc.get("metadata") or {},
+    }
+
+
+@router.get(
     "/{document_id}/versions",
     response_model=list[DocumentVersionOut],
     dependencies=[Depends(require_permission("VIEW_RECORD"))],

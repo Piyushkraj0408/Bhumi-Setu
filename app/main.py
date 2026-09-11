@@ -16,6 +16,7 @@ from app.api.routes import (
     public_portal,
     validation,
     records,
+    transactions,
 )
 from app.core.config import settings
 from app.core.database import init_db
@@ -63,6 +64,7 @@ app.include_router(
     blockchain_governance.router,
     prefix="/api/v1",
 )
+app.include_router(transactions.router, prefix="/api/v1")
 
 @app.get("/health", tags=["system"])
 def health():

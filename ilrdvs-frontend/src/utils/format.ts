@@ -38,7 +38,7 @@ export function formatFileSize(kb: number): string {
 }
 
 export function confidenceLevel(pct: number): "high" | "medium" | "low" {
-  if (pct >= 90) return "high";
-  if (pct >= 70) return "medium";
+  if (pct >= 85) return "high";
+  if (pct >= 65) return "medium";
   return "low";
 }

@@ -69,8 +69,8 @@ export function TehsilReviewPage() {
     );
   }
 
-  const flaggedFields = fields?.filter((f) => f.confidence < 70) ?? [];
-  const passedFields  = fields?.filter((f) => f.confidence >= 70) ?? [];
+  const flaggedFields  = fields?.filter((f) => f.confidence < 85) ?? [];
+  const passedFields   = fields?.filter((f) => f.confidence >= 85) ?? [];
 
   async function handleApprove() {
     const corrections: Record<string, string> = {};
@@ -137,10 +137,10 @@ export function TehsilReviewPage() {
           <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-amber-800">
-              {flaggedFields.length} field(s) require your correction
+              {flaggedFields.length} field(s) require your review (below 85% confidence)
             </p>
             <p className="text-xs text-amber-700 mt-1">
-              The AI extraction had low confidence on:{" "}
+              Fields with confidence 65–84% need verification; fields below 65% are critically low and require correction:{" "}
               <strong>{flaggedFields.map((f) => f.label).join(", ")}</strong>. Please verify
               against the original document and correct any errors before approving.
             </p>
@@ -216,19 +216,23 @@ export function TehsilReviewPage() {
                     onClick={() => setActiveField(f.id)}
                     className={`rounded-lg border-2 p-3 transition-all cursor-pointer ${
                       activeField === f.id
-                        ? "border-amber-400 bg-amber-50"
-                        : "border-amber-200 bg-amber-50/50 hover:border-amber-300"
+                        ? f.confidence < 65
+                          ? "border-red-500 bg-red-50"
+                          : "border-amber-400 bg-amber-50"
+                        : f.confidence < 65
+                          ? "border-red-300 bg-red-50/50 hover:border-red-400"
+                          : "border-amber-200 bg-amber-50/50 hover:border-amber-300"
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">
+                      <span className={`text-xs font-semibold uppercase tracking-wide ${f.confidence < 65 ? "text-red-700" : "text-amber-700"}`}>
                         {f.label}
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-amber-600 font-medium">
+                        <span className={`text-xs font-medium ${f.confidence < 65 ? "text-red-600" : "text-amber-600"}`}>
                           AI confidence: {f.confidence}%
                         </span>
-                        <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                        <AlertTriangle className={`h-3.5 w-3.5 ${f.confidence < 65 ? "text-red-500" : "text-amber-500"}`} />
                       </div>
                     </div>
                     <ConfidenceBar value={f.confidence} />

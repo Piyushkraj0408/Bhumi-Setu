@@ -49,7 +49,7 @@ function toFrontend(t: BackendVerificationTask): VerificationTask {
   return {
     id: t.task_id,
     documentId: String(t.document_id),
-    priority: confidence < 70 ? "High" : confidence < 85 ? "Medium" : "Low",
+    priority: confidence < 65 ? "High" : confidence < 85 ? "Medium" : "Low",
     owner: t.original_filename,
     location: {
       state: "Rajasthan",
@@ -93,7 +93,7 @@ export async function listVerificationTasks(
       items = docResult.items.map((doc) => ({
         id: `TASK-${doc.id.slice(0, 8).toUpperCase()}`,
         documentId: doc.id,
-        priority: (doc.confidence || 72) < 70 ? "High" : (doc.confidence || 72) < 85 ? "Medium" : "Low",
+        priority: (doc.confidence || 72) < 65 ? "High" : (doc.confidence || 72) < 85 ? "Medium" : "Low",
         owner: doc.fileName,
         location: doc.location || { state: "Rajasthan", district: "Jaipur", tehsil: "Amber", village: "Kukas" },
         confidence: doc.confidence || 72,

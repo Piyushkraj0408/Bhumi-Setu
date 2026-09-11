@@ -5,14 +5,14 @@ import { Tooltip } from "./Tooltip";
 
 const LEVEL_STYLES = {
   high: { text: "text-success-600", bg: "bg-success-500", chipBg: "bg-success-50", border: "border-green-200", label: "High Confidence", icon: CheckCircle2 },
-  medium: { text: "text-warning-600", bg: "bg-warning-500", chipBg: "bg-warning-50", border: "border-amber-200", label: "Medium Confidence", icon: AlertTriangle },
-  low: { text: "text-danger-600", bg: "bg-danger-500", chipBg: "bg-danger-50", border: "border-red-200", label: "Low Confidence", icon: XCircle },
+  medium: { text: "text-warning-600", bg: "bg-warning-500", chipBg: "bg-warning-50", border: "border-amber-200", label: "Medium Warning", icon: AlertTriangle },
+  low: { text: "text-danger-600", bg: "bg-danger-500", chipBg: "bg-danger-50", border: "border-red-200", label: "Critical Warning", icon: XCircle },
 } as const;
 
 const TOOLTIP_COPY: Record<keyof typeof LEVEL_STYLES, string> = {
-  high: "90–100%. The model is highly confident this value was read and extracted correctly.",
-  medium: "70–89%. Reasonably confident, but worth a quick visual check against the original.",
-  low: "Below 70%. Confidence is low — verify this value against the original document before approval.",
+  high: "≥ 85%. High confidence — verified and ready for automatic approval.",
+  medium: "65–84%. Medium warning — needs visual check and Tehsil Officer review.",
+  low: "Below 65%. Critical warning — low confidence, verification required before approval.",
 };
 
 /** Compact pill: icon + label + percentage. Use in tables and field lists. */

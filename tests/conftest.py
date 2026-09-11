@@ -29,7 +29,7 @@ class FakeCollection:
     def __init__(self):
         self._docs: list[dict] = []
 
-    def insert_one(self, doc: dict):
+    def insert_one(self, doc: dict, *args, **kwargs):
         self._docs.append(doc.copy())
         result = MagicMock()
         result.inserted_id = doc.get("_id", doc.get("id"))
@@ -51,8 +51,16 @@ class FakeCollection:
                 for op, operand in val.items():
                     if op == "$in" and doc_val not in operand:
                         return False
+                    elif op == "$nin" and doc_val in operand:
+                        return False
+                    elif op == "$ne" and doc_val == operand:
+                        return False
                     elif op == "$eq" and doc_val != operand:
                         return False
+                    elif op == "$regex":
+                        import re
+                        if not doc_val or not re.search(operand, str(doc_val)):
+                            return False
             else:
                 doc_val = self._get_nested(doc, key)
                 if doc_val != val:
@@ -69,18 +77,22 @@ class FakeCollection:
             cur = cur.get(part)
         return cur
 
-    def find(self, query: dict = None):
+    def find(self, query: dict = None, *args, **kwargs):
         query = query or {}
         return FakeList([d for d in self._docs if self._match(d, query)])
 
-    def find_one(self, query: dict = None):
+    def find_one(self, query: dict = None, *args, **kwargs):
         query = query or {}
         for d in self._docs:
             if self._match(d, query):
                 return d
         return None
 
-    def update_one(self, query: dict, update: dict):
+    def count_documents(self, query: dict = None, *args, **kwargs):
+        query = query or {}
+        return len([d for d in self._docs if self._match(d, query)])
+
+    def update_one(self, query: dict, update: dict, *args, **kwargs):
         for i, d in enumerate(self._docs):
             if self._match(d, query):
                 if "$set" in update:
@@ -90,9 +102,18 @@ class FakeCollection:
                         for part in parts[:-1]:
                             cur = cur.setdefault(part, {})
                         cur[parts[-1]] = v
+                if "$push" in update:
+                    for k, v in update["$push"].items():
+                        parts = k.split(".")
+                        cur = self._docs[i]
+                        for part in parts[:-1]:
+                            cur = cur.setdefault(part, {})
+                        cur_list = cur.setdefault(parts[-1], [])
+                        if isinstance(cur_list, list):
+                            cur_list.append(v)
                 break
 
-    def delete_one(self, query: dict):
+    def delete_one(self, query: dict, *args, **kwargs):
         for i, d in enumerate(self._docs):
             if self._match(d, query):
                 self._docs.pop(i)
@@ -100,12 +121,15 @@ class FakeCollection:
 
 
 class FakeList(list):
-    """List with .skip()/.limit() chaining support."""
+    """List with .skip()/.limit()/.sort() chaining support."""
     def skip(self, n):
         return FakeList(self[n:])
 
     def limit(self, n):
         return FakeList(self[:n])
+
+    def sort(self, key, direction=1):
+        return self
 
 
 class FakeDB:

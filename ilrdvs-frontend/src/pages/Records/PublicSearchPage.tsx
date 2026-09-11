@@ -63,17 +63,16 @@ function lookupRecord(recordNumber: string): RecordResult | null {
   if (!found) return null;
 
   const d = found.recordDetails;
-  const isConflict = found.source === "verification";
 
   // Read recorded details from the specific file
-  const rawOwner = d?.ownerName || (isConflict ? "रामेश्वर प्रसाद" : "राधेश्याम सिंह");
-  const khasra = d?.khasraNumber || (isConflict ? (found.corrections?.["f1"] || "112") : "155");
-  const khata = d?.khataNumber || (isConflict ? "48" : "41");
-  const village = d?.village || found.location?.village || "आसोपुर";
-  const tehsil = d?.tehsil || found.location?.tehsil || "दानापुर";
-  const district = d?.district || found.location?.district || "पटना";
-  const state = d?.state || found.location?.state || "बिहार";
-  const area = d?.areaHectares || (isConflict ? (found.corrections?.["f3"] || "3 बीघा 2 बिस्वा") : "25 डिसमिल (0.101 Hectare)");
+  const rawOwner = d?.ownerName || "Registered Owner";
+  const khasra = d?.khasraNumber || found.corrections?.["f1"] || "—";
+  const khata = d?.khataNumber || "—";
+  const village = d?.village || found.location?.village || "—";
+  const tehsil = d?.tehsil || found.location?.tehsil || "—";
+  const district = d?.district || found.location?.district || "—";
+  const state = d?.state || found.location?.state || "—";
+  const area = d?.areaHectares || found.corrections?.["f3"] || "—";
 
   return {
     recordNumber: found.recordNumber!,

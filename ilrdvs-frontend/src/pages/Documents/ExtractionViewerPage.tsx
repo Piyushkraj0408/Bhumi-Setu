@@ -18,7 +18,7 @@ import { Button } from "../../components/ui/Button";
 import { Tabs } from "../../components/ui/Tabs";
 import { ConfidenceRing } from "../../components/ui/Confidence";
 import {
-  getExtractedFields,
+  getExtractionResult,
   approveExtraction,
   isConflictDocument,
 } from "../../services/extraction.service";
@@ -27,10 +27,14 @@ import type { ExtractedField, LandDocument } from "../../types";
 import { TableSkeleton } from "../../components/ui/Skeleton";
 import { useToast } from "../../components/ui/Toast";
 
+const AUTO_APPROVE_THRESHOLD = 85;
+const CRITICAL_THRESHOLD = 65;
+
 export function ExtractionViewerPage() {
   const { id } = useParams();
   const [doc, setDoc] = useState<LandDocument | null>(null);
   const [fields, setFields] = useState<ExtractedField[] | null>(null);
+  const [warnings, setWarnings] = useState<string[]>([]);
   const [active, setActive] = useState<string | null>(null);
   const [approving, setApproving] = useState(false);
   const [recordNumber, setRecordNumber] = useState<string | null>(null);
@@ -41,10 +45,14 @@ export function ExtractionViewerPage() {
   useEffect(() => {
     if (!id) return;
     setFields(null);
+    setWarnings([]);
     setRecordNumber(null);
     getDocumentById(id).then((d) => {
       setDoc(d || null);
-      getExtractedFields(id, d).then(setFields);
+      getExtractionResult(id, d).then((res) => {
+        setFields(res.fields);
+        setWarnings(res.warnings || []);
+      });
     });
   }, [id]);
 
@@ -56,11 +64,21 @@ export function ExtractionViewerPage() {
     );
   }
 
-  const isConflict = isConflictDocument(doc ?? undefined);
-  const flaggedFields = fields?.filter((f) => f.confidence < 70) ?? [];
-  const overall = fields?.length
-    ? Math.min(...fields.map((f) => f.confidence))
-    : (doc?.confidence ?? 0);
+const overall = fields?.length
+  ? Math.min(...fields.map((f) => f.confidence))
+  : (doc?.confidence ?? 0);
+
+const flaggedFields =
+  fields?.filter((f) => f.confidence < AUTO_APPROVE_THRESHOLD) ?? [];
+
+const criticalFields =
+  fields?.filter((f) => f.confidence < CRITICAL_THRESHOLD) ?? [];
+
+const isCritical = overall < CRITICAL_THRESHOLD;
+const isMedium = overall >= CRITICAL_THRESHOLD && overall < AUTO_APPROVE_THRESHOLD;
+const isHighConfidence = overall >= AUTO_APPROVE_THRESHOLD;
+
+const isConflict = isMedium || isCritical;
 
   async function handleApprove() {
     if (isConflict) {
@@ -78,7 +96,7 @@ export function ExtractionViewerPage() {
 
   function handleCopy() {
     if (!recordNumber) return;
-    navigator.clipboard.writeText(recordNumber).catch(() => {});
+    navigator.clipboard.writeText(recordNumber).catch(() => { });
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -123,35 +141,84 @@ export function ExtractionViewerPage() {
         </div>
       </div>
 
-      {/* ── CONFLICT BANNER ── */}
-      {isConflict && fields && (
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl p-4">
-          <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+      {/* ── CRITICAL WARNING BANNER (< 65%) ── */}
+      {fields && isCritical && (
+        <div className="flex items-start gap-3 bg-red-50 border border-red-400 rounded-xl p-4">
+          <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm font-semibold text-amber-800">
-              ⚠️ Conflict Detected — Tehsil Officer Review Required
+            <p className="text-sm font-semibold text-red-800">
+              🔴 Critical Warning — Manual Verification Required ({overall}%)
             </p>
-            <p className="text-xs text-amber-700 mt-1">
-              {flaggedFields.length} field(s) have low AI confidence and cannot be
-              auto-approved:{" "}
-              <strong>{flaggedFields.map((f) => f.label).join(", ")}</strong>. The Tehsil
-              Officer must review and correct these fields before the record can be stored on
-              the blockchain.
+            <p className="text-xs text-red-700 mt-1">
+              <strong>{criticalFields.length} field(s)</strong> have critically low confidence below 65%:{" "}
+              <strong>
+                {criticalFields.map((f) => `${f.label} (${f.confidence}%)`).join(", ")}
+              </strong>. Manual verification by a Tehsil Officer is mandatory before this record can be stored.
             </p>
+            {warnings.length > 0 && (
+              <div className="mt-2.5 pt-2 border-t border-red-200">
+                <p className="text-xs font-semibold text-red-900 mb-1">
+                  Unrecognised Text &amp; Extraction Warnings:
+                </p>
+                <ul className="list-disc list-inside text-xs text-red-700 space-y-0.5">
+                  {warnings.map((warn, i) => (
+                    <li key={i}>{warn}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* ── AUTO-PASS BANNER ── */}
-      {!isConflict && fields && !recordNumber && (
+      {/* ── MEDIUM WARNING BANNER (65–84%) ── */}
+      {fields && isMedium && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl p-4">
+          <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-800">
+              ⚠️ Medium Warning — Tehsil Officer Review Required ({overall}%)
+            </p>
+            <p className="text-xs text-amber-700 mt-1">
+              {flaggedFields.length > 0 ? (
+                <>
+                  <strong>{flaggedFields.length} field(s)</strong> have confidence below the 85% auto-approval threshold:{" "}
+                  <strong>
+                    {flaggedFields.map((f) => `${f.label} (${f.confidence}%)`).join(", ")}
+                  </strong>.
+                </>
+              ) : (
+                <>Overall document confidence is {overall}% (below the 85% auto-approval threshold).</>
+              )}{" "}
+              The Tehsil Officer must review and correct these fields before the record can be stored on
+              the blockchain.
+            </p>
+            {warnings.length > 0 && (
+              <div className="mt-2.5 pt-2 border-t border-amber-200">
+                <p className="text-xs font-semibold text-amber-900 mb-1">
+                  Unrecognised Text &amp; Extraction Warnings:
+                </p>
+                <ul className="list-disc list-inside text-xs text-amber-700 space-y-0.5">
+                  {warnings.map((warn, i) => (
+                    <li key={i}>{warn}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── AUTO-PASS BANNER (≥ 85%) ── */}
+      {fields && isHighConfidence && !recordNumber && (
         <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-300 rounded-xl p-4">
           <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-emerald-800">
-              ✅ High Confidence — Ready for Automatic Approval
+              ✅ High Confidence ({overall}%) — Ready for Automatic Approval
             </p>
             <p className="text-xs text-emerald-700 mt-1">
-              All fields extracted with ≥ 90% confidence. No manual review needed. Click
+              All fields extracted with ≥ 85% confidence. No manual review needed. Click
               "Approve &amp; Anchor to Blockchain" to generate a public record number.
             </p>
           </div>
@@ -211,17 +278,20 @@ export function ExtractionViewerPage() {
               <span
                 key={f.id}
                 onClick={() => setActive(f.id)}
-                className={`inline-block px-1.5 py-0.5 mr-1 mb-1 rounded cursor-pointer transition-colors ${
-                  active === f.id
+                className={`inline-block px-1.5 py-0.5 mr-1 mb-1 rounded cursor-pointer transition-colors ${active === f.id
                     ? "bg-brand-200 text-brand-900 font-semibold"
-                    : f.confidence < 70
-                    ? "bg-amber-100 text-amber-800 underline decoration-amber-400 decoration-dashed ring-1 ring-amber-300"
-                    : "bg-success-50 text-success-800"
-                }`}
+                    : f.confidence < CRITICAL_THRESHOLD
+                      ? "bg-red-100 text-red-800 underline decoration-red-400 decoration-dashed ring-1 ring-red-300"
+                      : f.confidence < AUTO_APPROVE_THRESHOLD
+                        ? "bg-amber-100 text-amber-800 underline decoration-amber-400 decoration-dashed ring-1 ring-amber-300"
+                        : "bg-success-50 text-success-800"
+                  }`}
               >
                 {f.label}: {f.value}
-                {f.confidence < 70 && (
-                  <span className="ml-1 text-xs text-amber-600">({f.confidence}%)</span>
+                {f.confidence < AUTO_APPROVE_THRESHOLD && (
+                  <span className={`ml-1 text-xs ${f.confidence < CRITICAL_THRESHOLD ? "text-red-600" : "text-amber-600"}`}>
+                    ({f.confidence}%)
+                  </span>
                 )}
               </span>
             ))}
@@ -263,18 +333,28 @@ export function ExtractionViewerPage() {
                     <div key={f.id}>
                       <p className="text-xs text-slate-500 flex items-center gap-1">
                         {f.label}
-                        {f.confidence < 70 && (
-                          <AlertTriangle className="h-3 w-3 text-amber-500" />
+                        {f.confidence < AUTO_APPROVE_THRESHOLD && (
+                          <AlertTriangle className={`h-3 w-3 ${f.confidence < CRITICAL_THRESHOLD ? "text-red-500" : "text-amber-500"}`} />
                         )}
                       </p>
                       <p
                         className={`text-sm font-medium ${
-                          f.confidence < 70 ? "text-amber-700" : "text-navy-900"
+                          f.confidence < CRITICAL_THRESHOLD
+                            ? "text-red-700"
+                            : f.confidence < AUTO_APPROVE_THRESHOLD
+                            ? "text-amber-700"
+                            : "text-navy-900"
                         }`}
                       >
                         {f.value}
                       </p>
-                      <p className="text-xs text-slate-400">{f.confidence}% confidence</p>
+                      <p className={`text-xs ${
+                        f.confidence < CRITICAL_THRESHOLD
+                          ? "text-red-500 font-semibold"
+                          : f.confidence < AUTO_APPROVE_THRESHOLD
+                          ? "text-amber-500"
+                          : "text-slate-400"
+                      }`}>{f.confidence}% confidence</p>
                     </div>
                   ))}
                 </div>

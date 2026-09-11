@@ -48,15 +48,10 @@ import { useNavigate } from "react-router-dom";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { useAuth } from "../../lib/AuthContext";
 
-const TREND_DATA = [
-  { day: "Oct 21", uploaded: 1180, processed: 980, validated: 860 },
-  { day: "Oct 22", uploaded: 1340, processed: 1120, validated: 990 },
-  { day: "Oct 23", uploaded: 1010, processed: 1230, validated: 1080 },
-  { day: "Oct 24", uploaded: 1560, processed: 1340, validated: 1160 },
-  { day: "Oct 25", uploaded: 1420, processed: 1580, validated: 1390 },
-  { day: "Oct 26", uploaded: 1780, processed: 1500, validated: 1310 },
-  { day: "Oct 27", uploaded: 1690, processed: 1720, validated: 1540 },
-];
+import {
+  getDashboardStats,
+  type DashboardResponse,
+} from "../../services/dashboard.service";
 
 const toneDot: Record<string, string> = {
   brand: "bg-brand-100 text-brand-700",
@@ -334,277 +329,1007 @@ function CitizenDashboard({ userName }: { userName: string }) {
 export function DashboardPage() {
   const { t } = useTranslation();
   const { currentUser: authUser } = useAuth();
+
   const currentUser = authUser || CURRENT_USER;
 
-  if (currentUser.systemRole === "citizen") {
-    return <CitizenDashboard userName={currentUser.name} />;
-  }
-
-  const [states, setStates] = useState<StateProgress[] | null>(null);
-  const [tasks, setTasks] = useState<VerificationTask[] | null>(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    getStateProgress().then(setStates);
-    listVerificationTasks().then(setTasks);
-  }, []);
+  const [states, setStates] =
+    useState<StateProgress[] | null>(null);
 
-  const firstName = currentUser.name.split(" ")[1] ?? currentUser.name;
-  const pending = tasks?.filter((t) => t.status === "pending").length ?? 0;
-  const overdue = tasks?.filter((t) => t.flags.includes("overdue")).length ?? 0;
-  const highPriority = tasks?.filter((t) => t.priority === "High").length ?? 0;
-  const assignedToMe = tasks?.filter((t) => t.assignedTo === "A. Sharma").length ?? 0;
+  const [tasks, setTasks] =
+    useState<VerificationTask[] | null>(null);
 
-  const VALIDATION_DONUT = [
-    { name: t("records.valid", "Validated"), value: 88.2, color: "#2e7d4f" },
-    { name: t("verification.pending", "Pending"), value: 7.4, color: "#b8860b" },
-    { name: t("common.failed", "Failed"), value: 3.1, color: "#c0392b" },
-    { name: t("common.duplicate", "Duplicate"), value: 1.3, color: "#a99f86" },
-  ];
+  const [dashboard, setDashboard] =
+    useState<DashboardResponse | null>(null);
+
+  const [dashboardLoading, setDashboardLoading] =
+    useState(true);
+
+  const [dashboardError, setDashboardError] =
+    useState<string | null>(null);
 
   const ACTIVITY = [
-    { icon: UploadCloud, text: t("dashboard.act1", "New document uploaded — DOC-2024-1042"), time: t("dashboard.minsAgo2", "2 mins ago"), tone: "brand" as const },
-    { icon: ScanText, text: t("dashboard.act2", "OCR / HTR completed for DOC-2024-1038"), time: t("dashboard.minsAgo9", "9 mins ago"), tone: "info" as const },
-    { icon: Sparkles, text: t("dashboard.act3", "AI extraction completed for DOC-2024-1038"), time: t("dashboard.minsAgo11", "11 mins ago"), tone: "brand" as const },
-    { icon: AlertTriangle, text: t("dashboard.act4", "Validation failed — Owner conflict on DOC-2024-1004"), time: t("dashboard.minsAgo18", "18 mins ago"), tone: "danger" as const },
-    { icon: UserCheck, text: t("dashboard.act5", "Record assigned to Officer A. Sharma"), time: t("dashboard.minsAgo24", "24 mins ago"), tone: "warning" as const },
-    { icon: CheckCircle2, text: t("dashboard.act6", "Record approved — LR-2024-0892"), time: t("dashboard.minsAgo36", "36 mins ago"), tone: "success" as const },
+  {
+    icon: UploadCloud,
+    text: t(
+      "dashboard.act1",
+      "New document uploaded"
+    ),
+    time: t(
+      "dashboard.minsAgo2",
+      "2 mins ago"
+    ),
+    tone: "brand" as const,
+  },
+  {
+    icon: ScanText,
+    text: t(
+      "dashboard.act2",
+      "OCR / HTR completed"
+    ),
+    time: t(
+      "dashboard.minsAgo9",
+      "9 mins ago"
+    ),
+    tone: "info" as const,
+  },
+  {
+    icon: Sparkles,
+    text: t(
+      "dashboard.act3",
+      "AI extraction completed"
+    ),
+    time: t(
+      "dashboard.minsAgo11",
+      "11 mins ago"
+    ),
+    tone: "brand" as const,
+  },
+  {
+    icon: AlertTriangle,
+    text: t(
+      "dashboard.act4",
+      "Validation failed"
+    ),
+    time: t(
+      "dashboard.minsAgo18",
+      "18 mins ago"
+    ),
+    tone: "danger" as const,
+  },
+  {
+    icon: UserCheck,
+    text: t(
+      "dashboard.act5",
+      "Record assigned to officer"
+    ),
+    time: t(
+      "dashboard.minsAgo24",
+      "24 mins ago"
+    ),
+    tone: "warning" as const,
+  },
+  {
+    icon: CheckCircle2,
+    text: t(
+      "dashboard.act6",
+      "Record approved"
+    ),
+    time: t(
+      "dashboard.minsAgo36",
+      "36 mins ago"
+    ),
+    tone: "success" as const,
+  },
+];
+
+  useEffect(() => {
+    getStateProgress()
+      .then(setStates)
+      .catch((error) => {
+        console.error(
+          "State progress error:",
+          error
+        );
+      });
+
+    listVerificationTasks()
+      .then(setTasks)
+      .catch((error) => {
+        console.error(
+          "Verification tasks error:",
+          error
+        );
+      });
+
+    getDashboardStats()
+      .then((data) => {
+        console.log(
+          "Dashboard data from MongoDB:",
+          data
+        );
+
+        setDashboard(data);
+      })
+      .catch((error) => {
+        console.error(
+          "Dashboard API error:",
+          error
+        );
+
+        setDashboardError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load dashboard"
+        );
+      })
+      .finally(() => {
+        setDashboardLoading(false);
+      });
+  }, []);
+
+  // ---------------------------------------------------------
+  // CITIZEN DASHBOARD
+  // ---------------------------------------------------------
+
+  if (currentUser.systemRole === "citizen") {
+    return (
+      <CitizenDashboard
+        userName={currentUser.name}
+      />
+    );
+  }
+
+  // ---------------------------------------------------------
+  // LOADING
+  // ---------------------------------------------------------
+
+  if (dashboardLoading) {
+    return (
+      <div className="space-y-5">
+
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-7 w-64" />
+
+            <div className="mt-2">
+              <Skeleton className="h-4 w-96" />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map(
+            (_, index) => (
+              <Skeleton
+                key={index}
+                className="h-32 w-full"
+              />
+            )
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <Skeleton className="h-80 lg:col-span-2" />
+          <Skeleton className="h-80" />
+        </div>
+
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------
+  // ERROR
+  // ---------------------------------------------------------
+
+  if (dashboardError || !dashboard) {
+    return (
+      <Card>
+        <CardBody>
+          <div className="py-12 text-center">
+
+            <XCircle className="h-10 w-10 text-danger-500 mx-auto mb-3" />
+
+            <h2 className="text-lg font-semibold text-navy-900">
+              Dashboard data could not be loaded
+            </h2>
+
+            <p className="text-sm text-slate-500 mt-2">
+              {dashboardError ||
+                "No dashboard data was returned by the server."}
+            </p>
+
+            <Button
+              className="mt-5"
+              onClick={() =>
+                window.location.reload()
+              }
+            >
+              Retry
+            </Button>
+
+          </div>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  // ---------------------------------------------------------
+  // REAL DATA FROM API / MONGODB
+  // ---------------------------------------------------------
+
+  const stats = dashboard.stats;
+
+  const validationData = [
+    {
+      name: t(
+        "records.valid",
+        "Validated"
+      ),
+      value: dashboard.validation.validated,
+      color: "#2e7d4f",
+    },
+    {
+      name: t(
+        "verification.pending",
+        "Pending"
+      ),
+      value: dashboard.validation.pending,
+      color: "#b8860b",
+    },
+    {
+      name: t(
+        "common.failed",
+        "Failed"
+      ),
+      value: dashboard.validation.failed,
+      color: "#c0392b",
+    },
+    {
+      name: t(
+        "common.duplicate",
+        "Duplicate"
+      ),
+      value: dashboard.validation.duplicate,
+      color: "#a99f86",
+    },
   ];
+
+  const processedPercentage =
+    stats.total_documents > 0
+      ? (
+          (stats.processed_documents /
+            stats.total_documents) *
+          100
+        ).toFixed(1)
+      : "0.0";
+
+  const firstName =
+    currentUser.name.split(" ")[1] ??
+    currentUser.name;
+
+  const pending =
+  tasks?.filter(
+    (task) => task.status === "pending"
+  ).length ?? 0;
+
+const overdue =
+  tasks?.filter(
+    (task) =>
+      task.flags?.includes("overdue")
+  ).length ?? 0;
+
+const highPriority =
+  tasks?.filter(
+    (task) => task.priority === "High"
+  ).length ?? 0;
+
+const assignedToMe =
+  tasks?.filter(
+    (task) =>
+      task.assignedTo === "A. Sharma"
+  ).length ?? 0;
 
   return (
     <div className="space-y-5">
+
+      {/* ================================================= */}
+      {/* HEADER */}
+      {/* ================================================= */}
+
       <div className="flex items-center justify-between flex-wrap gap-3">
+
         <div>
+
           <h1 className="text-xl font-semibold text-navy-900">
-            {t("dashboard.greeting", "Good morning, Officer")} {firstName}
+            {t(
+              "dashboard.greeting",
+              "Good morning, Officer"
+            )}{" "}
+            {firstName}
           </h1>
+
           <p className="text-sm text-slate-500 mt-0.5">
             {t(
               "dashboard.subDescription",
               "Here's today's land record digitization overview — monitor processing, AI extraction, validation and verification activity."
             )}
           </p>
+
         </div>
+
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            {t("dashboard.last30Days", "Last 30 Days")}
-          </Button>
-          <Button size="sm" icon={<UploadCloud className="h-3.5 w-3.5" />} onClick={() => navigate("/documents/upload")}>
-            {t("dashboard.uploadDocument", "Upload Document")}
-          </Button>
-        </div>
-      </div>
 
-      {/* KPI row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KPICard
-          label={t("dashboard.totalDocuments", "Total Documents")}
-          value={124560}
-          changePct={12}
-          trend="up"
-          context={t("dashboard.totalDocsContext", "Across 5 states, 30 days")}
-          icon={<FileStack className="h-4 w-4" />}
-        />
-        <KPICard
-          label={t("dashboard.processed", "Processed")}
-          value={109824}
-          changePct={8}
-          trend="up"
-          context={t("dashboard.processedContext", "88.2% of total uploads")}
-          icon={<Loader2 className="h-4 w-4" />}
-        />
-        <KPICard
-          label={t("dashboard.pendingVerification", "Pending Verification")}
-          value={342}
-          changePct={5}
-          trend="up"
-          tone="warning"
-          context={`${highPriority || 58} ${t("dashboard.highPriorityContext", "high priority")}`}
-          icon={<ClipboardList className="h-4 w-4" />}
-        />
-        <KPICard
-          label={t("dashboard.validationErrors", "Validation Errors")}
-          value={3862}
-          changePct={2}
-          trend="down"
-          tone="danger"
-          context={t("dashboard.valErrorsContext", "3.1% of processed documents")}
-          icon={<XCircle className="h-4 w-4" />}
-        />
-        <KPICard
-          label={t("dashboard.processing", "Processing")}
-          value={10982}
-          changePct={4}
-          trend="up"
-          tone="brand"
-          context={t("dashboard.processingContext", "Currently in the AI pipeline")}
-          icon={<Loader2 className="h-4 w-4" />}
-        />
-        <KPICard
-          label={t("dashboard.failed", "Failed")}
-          value={614}
-          changePct={3}
-          trend="down"
-          tone="danger"
-          context={t("dashboard.failedContext", "Requires manual re-scan")}
-          icon={<XCircle className="h-4 w-4" />}
-        />
-        <KPICard
-          label={t("dashboard.approved", "Approved")}
-          value={98213}
-          changePct={9}
-          trend="up"
-          tone="success"
-          context={t("dashboard.approvedContext", "Digitally certified records")}
-          icon={<ThumbsUp className="h-4 w-4" />}
-        />
-        <KPICard
-          label={t("dashboard.rejected", "Rejected")}
-          value={1122}
-          changePct={1}
-          trend="down"
-          tone="danger"
-          context={t("dashboard.rejectedContext", "Sent back for re-verification")}
-          icon={<ThumbsDown className="h-4 w-4" />}
-        />
-      </div>
-
-      {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2">
-          <ChartCard
-            title={t("dashboard.processingTrend", "Processing Trend")}
-            subtitle={t("dashboard.processingTrendSub", "Documents uploaded, processed and validated over the last 7 days")}
+          <Button
+            variant="outline"
+            size="sm"
           >
-            <ResponsiveContainer width="100%" height={260}>
-              <AreaChart data={TREND_DATA} margin={{ left: -20, right: 10 }}>
-                <defs>
-                  <linearGradient id="upl" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3f9280" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#3f9280" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="proc" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2e7d4f" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#2e7d4f" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e9e4d5" />
-                <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#6b7a72" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "#6b7a72" }} axisLine={false} tickLine={false} />
-                <RTooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e7dcc0" }} />
-                <Area type="monotone" dataKey="uploaded" name={t("dashboard.uploaded", "Uploaded")} stroke="#175a50" fill="url(#upl)" strokeWidth={2} />
-                <Area type="monotone" dataKey="processed" name={t("dashboard.processed", "Processed")} stroke="#2e7d4f" fill="url(#proc)" strokeWidth={2} />
-                <Area type="monotone" dataKey="validated" name={t("dashboard.validated", "Validated")} stroke="#b8860b" fill="transparent" strokeWidth={2} strokeDasharray="4 3" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </ChartCard>
+            {t(
+              "dashboard.last30Days",
+              "Last 30 Days"
+            )}
+          </Button>
+
+          <Button
+            size="sm"
+            icon={
+              <UploadCloud className="h-3.5 w-3.5" />
+            }
+            onClick={() =>
+              navigate("/documents/upload")
+            }
+          >
+            {t(
+              "dashboard.uploadDocument",
+              "Upload Document"
+            )}
+          </Button>
+
         </div>
+
+      </div>
+
+      {/* ================================================= */}
+      {/* REAL KPI DATA */}
+      {/* ================================================= */}
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+        <KPICard
+          label={t(
+            "dashboard.totalDocuments",
+            "Total Documents"
+          )}
+          value={stats.total_documents}
+          context={
+            dashboard.tehsil_code
+              ? `Tehsil ${dashboard.tehsil_code}`
+              : "All accessible documents"
+          }
+          icon={
+            <FileStack className="h-4 w-4" />
+          }
+        />
+
+        <KPICard
+          label={t(
+            "dashboard.processed",
+            "Processed"
+          )}
+          value={stats.processed_documents}
+          context={`${processedPercentage}% of total uploads`}
+          icon={
+            <Loader2 className="h-4 w-4" />
+          }
+        />
+
+        <KPICard
+          label={t(
+            "dashboard.pendingVerification",
+            "Pending Verification"
+          )}
+          value={stats.pending_verification}
+          tone="warning"
+          context="Currently waiting for verification"
+          icon={
+            <ClipboardList className="h-4 w-4" />
+          }
+        />
+
+        <KPICard
+          label={t(
+            "dashboard.validationErrors",
+            "Validation Errors"
+          )}
+          value={stats.failed_documents}
+          tone="danger"
+          context="Documents requiring attention"
+          icon={
+            <XCircle className="h-4 w-4" />
+          }
+        />
+
+        <KPICard
+          label={t(
+            "dashboard.processing",
+            "Processing"
+          )}
+          value={stats.processing_documents}
+          tone="brand"
+          context="Currently in the AI pipeline"
+          icon={
+            <Loader2 className="h-4 w-4" />
+          }
+        />
+
+        <KPICard
+          label={t(
+            "dashboard.failed",
+            "Failed"
+          )}
+          value={stats.failed_documents}
+          tone="danger"
+          context="Requires attention"
+          icon={
+            <XCircle className="h-4 w-4" />
+          }
+        />
+
+        <KPICard
+          label={t(
+            "dashboard.approved",
+            "Approved"
+          )}
+          value={stats.approved_master_records}
+          tone="success"
+          context="Digitally certified records"
+          icon={
+            <ThumbsUp className="h-4 w-4" />
+          }
+        />
+
+        <KPICard
+          label={t(
+            "dashboard.rejected",
+            "Rejected"
+          )}
+          value={stats.rejected_documents}
+          tone="danger"
+          context="Sent back for re-verification"
+          icon={
+            <ThumbsDown className="h-4 w-4" />
+          }
+        />
+
+      </div>
+
+      {/* ================================================= */}
+      {/* REAL PROCESSING GRAPH + VALIDATION DONUT */}
+      {/* ================================================= */}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+        {/* PROCESSING TREND */}
+
+        <div className="lg:col-span-2">
+
+          <ChartCard
+            title={t(
+              "dashboard.processingTrend",
+              "Processing Trend"
+            )}
+            subtitle={t(
+              "dashboard.processingTrendSub",
+              "Documents uploaded, processed and validated over the last 7 days"
+            )}
+          >
+
+            <ResponsiveContainer
+              width="100%"
+              height={260}
+            >
+
+              <AreaChart
+                data={dashboard.trend}
+                margin={{
+                  left: -20,
+                  right: 10,
+                }}
+              >
+
+                <defs>
+
+                  <linearGradient
+                    id="upl"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="5%"
+                      stopColor="#3f9280"
+                      stopOpacity={0.35}
+                    />
+
+                    <stop
+                      offset="95%"
+                      stopColor="#3f9280"
+                      stopOpacity={0}
+                    />
+                  </linearGradient>
+
+                  <linearGradient
+                    id="proc"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="5%"
+                      stopColor="#2e7d4f"
+                      stopOpacity={0.3}
+                    />
+
+                    <stop
+                      offset="95%"
+                      stopColor="#2e7d4f"
+                      stopOpacity={0}
+                    />
+                  </linearGradient>
+
+                </defs>
+
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#e9e4d5"
+                />
+
+                <XAxis
+                  dataKey="day"
+                  tick={{
+                    fontSize: 11,
+                    fill: "#6b7a72",
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+
+                <YAxis
+                  tick={{
+                    fontSize: 11,
+                    fill: "#6b7a72",
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+
+                <RTooltip
+                  contentStyle={{
+                    fontSize: 12,
+                    borderRadius: 8,
+                    border:
+                      "1px solid #e7dcc0",
+                  }}
+                />
+
+                <Area
+                  type="monotone"
+                  dataKey="uploaded"
+                  name={t(
+                    "dashboard.uploaded",
+                    "Uploaded"
+                  )}
+                  stroke="#175a50"
+                  fill="url(#upl)"
+                  strokeWidth={2}
+                />
+
+                <Area
+                  type="monotone"
+                  dataKey="processed"
+                  name={t(
+                    "dashboard.processed",
+                    "Processed"
+                  )}
+                  stroke="#2e7d4f"
+                  fill="url(#proc)"
+                  strokeWidth={2}
+                />
+
+                <Area
+                  type="monotone"
+                  dataKey="validated"
+                  name={t(
+                    "dashboard.validated",
+                    "Validated"
+                  )}
+                  stroke="#b8860b"
+                  fill="transparent"
+                  strokeWidth={2}
+                  strokeDasharray="4 3"
+                />
+
+              </AreaChart>
+
+            </ResponsiveContainer>
+
+          </ChartCard>
+
+        </div>
+
+        {/* VALIDATION DONUT */}
 
         <ChartCard
-          title={t("dashboard.validationStatus", "Validation Status")}
-          subtitle={t("dashboard.valStatusSub", "Share of processed documents")}
+          title={t(
+            "dashboard.validationStatus",
+            "Validation Status"
+          )}
+          subtitle={t(
+            "dashboard.valStatusSub",
+            "Share of processed documents"
+          )}
         >
-          <div style={{ width: "100%", height: 180 }}>
-            <ResponsiveContainer width="100%" height="100%">
+
+          <div
+            style={{
+              width: "100%",
+              height: 180,
+            }}
+          >
+
+            <ResponsiveContainer
+              width="100%"
+              height="100%"
+            >
+
               <PieChart>
-                <Pie data={VALIDATION_DONUT} dataKey="value" nameKey="name" innerRadius={45} outerRadius={70} paddingAngle={2}>
-                  {VALIDATION_DONUT.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
-                  ))}
+
+                <Pie
+                  data={validationData}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={45}
+                  outerRadius={70}
+                  paddingAngle={2}
+                >
+
+                  {validationData.map(
+                    (entry) => (
+                      <Cell
+                        key={entry.name}
+                        fill={entry.color}
+                      />
+                    )
+                  )}
+
                 </Pie>
-                <RTooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e7dcc0" }} />
+
+                <RTooltip
+                  contentStyle={{
+                    fontSize: 12,
+                    borderRadius: 8,
+                    border:
+                      "1px solid #e7dcc0",
+                  }}
+                />
+
               </PieChart>
+
             </ResponsiveContainer>
+
           </div>
+
           <div className="grid grid-cols-2 gap-2 mt-2">
-            {VALIDATION_DONUT.map((v) => (
-              <div key={v.name} className="flex items-center gap-1.5 text-xs text-slate-600">
-                <span className="h-2 w-2 rounded-full" style={{ background: v.color }} />
-                {v.name} <span className="ml-auto font-medium text-navy-800">{v.value}%</span>
-              </div>
-            ))}
+
+            {validationData.map(
+              (item) => (
+                <div
+                  key={item.name}
+                  className="flex items-center gap-1.5 text-xs text-slate-600"
+                >
+
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{
+                      background:
+                        item.color,
+                    }}
+                  />
+
+                  {item.name}
+
+                  <span className="ml-auto font-medium text-navy-800">
+                    {item.value}%
+                  </span>
+
+                </div>
+              )
+            )}
+
           </div>
+
         </ChartCard>
+
       </div>
 
+      {/* ================================================= */}
+      {/* EXISTING STATE PROGRESS */}
+      {/* ================================================= */}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
         <div className="lg:col-span-2">
+
           <ChartCard
-            title={t("dashboard.stateProgress", "State-wise Progress")}
-            subtitle={t("dashboard.stateProgressSub", "Total records digitized and approved per state")}
+            title={t(
+              "dashboard.stateProgress",
+              "State-wise Progress"
+            )}
+            subtitle={t(
+              "dashboard.stateProgressSub",
+              "Total records digitized and approved per state"
+            )}
             action={
-              <button className="text-xs text-brand-600 font-medium hover:underline" onClick={() => navigate("/analytics")}>
-                {t("dashboard.viewAll", "View All")}
+              <button
+                className="text-xs text-brand-600 font-medium hover:underline"
+                onClick={() =>
+                  navigate("/analytics")
+                }
+              >
+                {t(
+                  "dashboard.viewAll",
+                  "View All"
+                )}
               </button>
             }
           >
+
             {!states ? (
+
               <div className="space-y-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-6 w-full" />
+
+                {Array.from({
+                  length: 5,
+                }).map((_, i) => (
+                  <Skeleton
+                    key={i}
+                    className="h-6 w-full"
+                  />
                 ))}
+
               </div>
+
             ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={states} layout="vertical" margin={{ left: 10 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e9e4d5" />
-                  <XAxis type="number" tick={{ fontSize: 11, fill: "#6b7a72" }} axisLine={false} tickLine={false} />
-                  <YAxis dataKey="state" type="category" width={110} tick={{ fontSize: 11, fill: "#1b342c" }} axisLine={false} tickLine={false} />
-                  <RTooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e7dcc0" }} />
-                  <Bar dataKey="totalRecords" name={t("dashboard.totalRecords", "Total Records")} fill="#cfe6df" radius={[0, 4, 4, 0]} />
-                  <Bar dataKey="approved" name={t("dashboard.approved", "Approved")} fill="#175a50" radius={[0, 4, 4, 0]} />
+
+              <ResponsiveContainer
+                width="100%"
+                height={220}
+              >
+
+                <BarChart
+                  data={states}
+                  layout="vertical"
+                  margin={{
+                    left: 10,
+                  }}
+                >
+
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    horizontal={false}
+                    stroke="#e9e4d5"
+                  />
+
+                  <XAxis
+                    type="number"
+                    tick={{
+                      fontSize: 11,
+                      fill: "#6b7a72",
+                    }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+
+                  <YAxis
+                    dataKey="state"
+                    type="category"
+                    width={110}
+                    tick={{
+                      fontSize: 11,
+                      fill: "#1b342c",
+                    }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+
+                  <RTooltip
+                    contentStyle={{
+                      fontSize: 12,
+                      borderRadius: 8,
+                      border:
+                        "1px solid #e7dcc0",
+                    }}
+                  />
+
+                  <Bar
+                    dataKey="totalRecords"
+                    name={t(
+                      "dashboard.totalRecords",
+                      "Total Records"
+                    )}
+                    fill="#cfe6df"
+                    radius={[
+                      0,
+                      4,
+                      4,
+                      0,
+                    ]}
+                  />
+
+                  <Bar
+                    dataKey="approved"
+                    name={t(
+                      "dashboard.approved",
+                      "Approved"
+                    )}
+                    fill="#175a50"
+                    radius={[
+                      0,
+                      4,
+                      4,
+                      0,
+                    ]}
+                  />
+
                 </BarChart>
+
               </ResponsiveContainer>
+
             )}
+
           </ChartCard>
+
         </div>
+
+        {/* ================================================= */}
+        {/* EXISTING VERIFICATION WORKLOAD */}
+        {/* ================================================= */}
 
         <Card>
+
           <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+
             <h3 className="text-sm font-semibold text-navy-900">
-              {t("dashboard.verificationWorkload", "Verification Workload")}
+              {t(
+                "dashboard.verificationWorkload",
+                "Verification Workload"
+              )}
             </h3>
-            <button className="text-xs text-brand-600 font-medium hover:underline" onClick={() => navigate("/verification")}>
-              {t("dashboard.openQueue", "Open Queue")}
+
+            <button
+              className="text-xs text-brand-600 font-medium hover:underline"
+              onClick={() =>
+                navigate("/verification")
+              }
+            >
+              {t(
+                "dashboard.openQueue",
+                "Open Queue"
+              )}
             </button>
+
           </div>
+
           <div className="p-5 grid grid-cols-2 gap-4">
+
             <div>
-              <p className="text-2xl font-semibold text-navy-900">{pending || 128}</p>
-              <p className="text-xs text-slate-500">{t("dashboard.pending", "Pending")}</p>
+              <p className="text-2xl font-semibold text-navy-900">
+                {pending}
+              </p>
+
+              <p className="text-xs text-slate-500">
+                {t(
+                  "dashboard.pending",
+                  "Pending"
+                )}
+              </p>
             </div>
+
             <div>
-              <p className="text-2xl font-semibold text-navy-900">{assignedToMe || 14}</p>
-              <p className="text-xs text-slate-500">{t("dashboard.assignedToMe", "Assigned to me")}</p>
+              <p className="text-2xl font-semibold text-navy-900">
+                {assignedToMe}
+              </p>
+
+              <p className="text-xs text-slate-500">
+                {t(
+                  "dashboard.assignedToMe",
+                  "Assigned to me"
+                )}
+              </p>
             </div>
+
             <div>
-              <p className="text-2xl font-semibold text-warning-600">{highPriority || 58}</p>
-              <p className="text-xs text-slate-500">{t("dashboard.highPriority", "High priority")}</p>
+              <p className="text-2xl font-semibold text-warning-600">
+                {highPriority}
+              </p>
+
+              <p className="text-xs text-slate-500">
+                {t(
+                  "dashboard.highPriority",
+                  "High priority"
+                )}
+              </p>
             </div>
+
             <div>
-              <p className="text-2xl font-semibold text-danger-500">{overdue || 9}</p>
-              <p className="text-xs text-slate-500">{t("dashboard.overdue", "Overdue")}</p>
+              <p className="text-2xl font-semibold text-danger-500">
+                {overdue}
+              </p>
+
+              <p className="text-xs text-slate-500">
+                {t(
+                  "dashboard.overdue",
+                  "Overdue"
+                )}
+              </p>
             </div>
+
           </div>
+
         </Card>
+
       </div>
 
+      {/* ================================================= */}
+      {/* EXISTING RECENT ACTIVITY */}
+      {/* ================================================= */}
+
       <ChartCard
-        title={t("dashboard.recentActivity", "Recent Activity")}
-        subtitle={t("dashboard.recentActivitySub", "Latest processing, extraction and verification events")}
+        title={t(
+          "dashboard.recentActivity",
+          "Recent Activity"
+        )}
+        subtitle={t(
+          "dashboard.recentActivitySub",
+          "Latest processing, extraction and verification events"
+        )}
       >
+
         <div className="flex flex-col">
-          {ACTIVITY.map((a, i) => (
-            <div key={i} className="flex items-start gap-3 py-2.5 border-b last:border-0 border-slate-50">
-              <span className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 ${toneDot[a.tone]}`}>
-                <a.icon className="h-3.5 w-3.5" />
-              </span>
-              <p className="text-sm text-navy-800 flex-1">{a.text}</p>
-              <span className="text-xs text-slate-400 shrink-0">{a.time}</span>
-            </div>
-          ))}
+
+          {ACTIVITY.map(
+            (a, i) => (
+              <div
+                key={i}
+                className="flex items-start gap-3 py-2.5 border-b last:border-0 border-slate-50"
+              >
+
+                <span
+                  className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 ${toneDot[a.tone]}`}
+                >
+                  <a.icon className="h-3.5 w-3.5" />
+                </span>
+
+                <p className="text-sm text-navy-800 flex-1">
+                  {a.text}
+                </p>
+
+                <span className="text-xs text-slate-400 shrink-0">
+                  {a.time}
+                </span>
+
+              </div>
+            )
+          )}
+
         </div>
+
       </ChartCard>
+
     </div>
   );
 }

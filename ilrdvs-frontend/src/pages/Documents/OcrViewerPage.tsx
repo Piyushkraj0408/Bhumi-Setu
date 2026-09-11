@@ -69,7 +69,7 @@ export function OcrViewerPage() {
     }, 400);
   };
 
-  const lowConfidenceCount = fields?.filter((f) => f.confidence < 70).length ?? 0;
+  const lowConfidenceCount = fields?.filter((f) => f.confidence < 85).length ?? 0;
   const editedCount = fields?.filter((f) => f.source === "Manual").length ?? 0;
 
   return (

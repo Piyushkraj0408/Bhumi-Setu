@@ -30,12 +30,14 @@ class Settings(BaseSettings):
     )
 
     ocr_review_threshold: float = float(
-        os.getenv("OCR_REVIEW_THRESHOLD", "0.70")
+        os.getenv("OCR_REVIEW_THRESHOLD", "0.65")
     )
 
     ocr_accept_threshold: float = float(
-        os.getenv("OCR_ACCEPT_THRESHOLD", "0.90")
+        os.getenv("OCR_ACCEPT_THRESHOLD", "0.85")
     )
+
+    mistral_api_key: str = os.getenv("MISTRAL_API_KEY", "")
 
     allowed_origins: str = os.getenv(
         "ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"

@@ -73,6 +73,23 @@ def init_db():
         db.processing_jobs.create_index([("status", ASCENDING)])
         db.audit_logs.create_index([("created_at", ASCENDING)])
 
+        # Transaction collection (using existing collection 'transaction')
+        db.transaction.create_index([("transaction_id", ASCENDING)], unique=True)
+        db.transaction.create_index([("original_khasra_number", ASCENDING)])
+        db.transaction.create_index([("parent_khasra_no", ASCENDING)])
+        db.transaction.create_index([("child_khasra_numbers", ASCENDING)])
+        db.transaction.create_index([("seller_id", ASCENDING)])
+        db.transaction.create_index([("buyer_id", ASCENDING)])
+        db.transaction.create_index([("transaction_year", ASCENDING)])
+        db.transaction.create_index([("transaction_date", ASCENDING)])
+        db.transaction.create_index([("status", ASCENDING)])
+
+        # Master Records collection
+        db.master_records.create_index([("khasra_number", ASCENDING)])
+        db.master_records.create_index([("parent_khasra_no", ASCENDING)])
+        db.master_records.create_index([("owner_id", ASCENDING)])
+
         logger.info("MongoDB schema and indexes initialized successfully.")
     except Exception as e:
         logger.warning(f"MongoDB initialization warning: {e}")
+
