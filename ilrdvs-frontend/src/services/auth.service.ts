@@ -12,6 +12,15 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface SignupRequest {
+  name: string;
+  email: string;
+  password: string;
+  role_name?: string;
+  scope_type?: string | null;
+  scope_id?: string | null;
+}
+
 export interface LoginResponse {
   user: AppUser;
   token: string;
@@ -55,6 +64,7 @@ function toAppUser(u: BackendCurrentUser): AppUser {
     tehsil_officer: "Data Entry Officer",
     verification_officer: "Verification Officer",
     auditor: "Auditor",
+    citizen: "Citizen / Land Owner",
   };
 
   const nameParts = u.name.trim().split(" ");
@@ -68,10 +78,10 @@ function toAppUser(u: BackendCurrentUser): AppUser {
     id: u.id,
     name: u.name,
     employeeId: u.id.replace(/-/g, "").slice(0, 12).toUpperCase(),
-    role: (roleMap[primaryRole] as AppUser["role"]) ?? "Data Entry Officer",
-    systemRole: (primaryRole as AppUser["systemRole"]) ?? "tehsil_officer",
+    role: (roleMap[primaryRole] as AppUser["role"]) ?? (primaryRole === "citizen" ? "Citizen / Land Owner" : "Data Entry Officer"),
+    systemRole: (primaryRole as AppUser["systemRole"]) ?? "citizen",
     permissions: u.all_permissions ?? [],
-    department: "Land Records Department",
+    department: primaryRole === "citizen" ? "Public Citizen Portal" : "Land Records Department",
     email: u.email,
     avatarInitials: initials || "U",
   };
@@ -96,6 +106,34 @@ export async function login(req: LoginRequest): Promise<LoginResponse> {
   tokenStore.set(tokenRes.access_token, tokenRes.refresh_token);
 
   // 3. Fetch the user profile
+  const profile = await apiFetch<BackendCurrentUser>("/auth/me");
+  const user = toAppUser(profile);
+
+  return { user, token: tokenRes.access_token };
+}
+
+export async function signup(req: SignupRequest): Promise<LoginResponse> {
+  if (!req.name || !req.email || !req.password) {
+    throw new ApiError("Full name, email and password are required.", 400);
+  }
+
+  // 1. Register & obtain tokens
+  const tokenRes = await apiFetch<BackendTokenResponse>("/auth/signup", {
+    method: "POST",
+    body: {
+      name: req.name,
+      email: req.email,
+      password: req.password,
+      role_name: req.role_name || "tehsil_officer",
+      scope_type: req.scope_type || null,
+      scope_id: req.scope_id || null,
+    } as unknown as Record<string, unknown>,
+  });
+
+  // 2. Persist tokens
+  tokenStore.set(tokenRes.access_token, tokenRes.refresh_token);
+
+  // 3. Fetch user profile
   const profile = await apiFetch<BackendCurrentUser>("/auth/me");
   const user = toAppUser(profile);
 

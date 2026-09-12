@@ -16,6 +16,7 @@ from fastapi import (
 from pymongo.database import Database
 
 from app.core.database import get_db
+from app.core.permissions import require_permission
 from app.api.deps import require_roles, get_current_user
 from app.models.mongo_models import MongoUser, DocumentStatus
 from app.schemas.auth import LoginRequest, TokenResponse
@@ -169,10 +170,14 @@ def get_tehsil_dashboard(
     db: Database = Depends(get_db),
 ):
     """
-    Real Tehsil Officer dashboard using MongoDB counts.
+    Dashboard statistics from MongoDB.
     """
 
     tehsil_code = get_tehsil_code(current_user)
+
+    # --------------------------------------------------------
+    # DOCUMENT FILTER
+    # --------------------------------------------------------
 
     document_query = {
         "status": {
@@ -182,6 +187,10 @@ def get_tehsil_dashboard(
 
     if tehsil_code:
         document_query["scope_id"] = tehsil_code
+
+    # --------------------------------------------------------
+    # KPI COUNTS
+    # --------------------------------------------------------
 
     total_documents = db.documents.count_documents(
         document_query
@@ -201,33 +210,294 @@ def get_tehsil_dashboard(
         }
     )
 
-    pending_tasks = db.verification_tasks.count_documents(
+    processing_documents = db.documents.count_documents(
         {
-            "status": "pending"
+            **document_query,
+            "status": "processing",
         }
     )
 
-    verified_tasks = db.verification_tasks.count_documents(
-        {
-            "status": "verified"
+    # --------------------------------------------------------
+    # VERIFICATION
+    # --------------------------------------------------------
+
+    if tehsil_code:
+
+        documents = db.documents.find(
+            document_query,
+            {
+                "_id": 1,
+                "id": 1,
+            },
+        )
+
+        document_ids = []
+
+        for doc in documents:
+            if doc.get("id"):
+                document_ids.append(
+                    str(doc["id"])
+                )
+
+            if doc.get("_id"):
+                document_ids.append(
+                    str(doc["_id"])
+                )
+
+        task_query = {
+            "document_id": {
+                "$in": document_ids
+            }
         }
+
+    else:
+        # Super admin sees everything
+        task_query = {}
+
+    pending_verification = (
+        db.verification_tasks.count_documents(
+            {
+                **task_query,
+                "status": "pending",
+            }
+        )
     )
 
-    master_records = db.master_records.count_documents(
-        {
-            "status": "approved"
-        }
+    verified_documents = (
+        db.verification_tasks.count_documents(
+            {
+                **task_query,
+                "status": "verified",
+            }
+        )
     )
+
+    rejected_documents = (
+        db.verification_tasks.count_documents(
+            {
+                **task_query,
+                "status": "rejected",
+            }
+        )
+    )
+
+    validation_failed = (
+        db.verification_tasks.count_documents(
+            {
+                **task_query,
+                "status": "failed",
+            }
+        )
+    )
+
+    validation_duplicate = (
+        db.verification_tasks.count_documents(
+            {
+                **task_query,
+                "status": "duplicate",
+            }
+        )
+    )
+
+    # --------------------------------------------------------
+    # APPROVED MASTER RECORDS
+    # --------------------------------------------------------
+
+    if tehsil_code:
+
+        approved_master_records = 0
+
+        records = db.master_records.find(
+            {
+                "status": "approved"
+            },
+            {
+                "document_id": 1
+            },
+        )
+
+        for record in records:
+
+            document_id = record.get(
+                "document_id"
+            )
+
+            if not document_id:
+                continue
+
+            exists = db.documents.find_one(
+                {
+                    **document_query,
+                    "$or": [
+                        {
+                            "id": str(document_id)
+                        },
+                        {
+                            "_id": str(document_id)
+                        },
+                    ],
+                },
+                {
+                    "_id": 1
+                },
+            )
+
+            if exists:
+                approved_master_records += 1
+
+    else:
+
+        approved_master_records = (
+            db.master_records.count_documents(
+                {
+                    "status": "approved"
+                }
+            )
+        )
+
+    # --------------------------------------------------------
+    # VALIDATION PERCENTAGES
+    # --------------------------------------------------------
+
+    validation_total = (
+        verified_documents
+        + pending_verification
+        + validation_failed
+        + validation_duplicate
+    )
+
+    if validation_total:
+
+        validated_percentage = round(
+            verified_documents
+            / validation_total
+            * 100,
+            1,
+        )
+
+        pending_percentage = round(
+            pending_verification
+            / validation_total
+            * 100,
+            1,
+        )
+
+        failed_percentage = round(
+            validation_failed
+            / validation_total
+            * 100,
+            1,
+        )
+
+        duplicate_percentage = round(
+            validation_duplicate
+            / validation_total
+            * 100,
+            1,
+        )
+
+    else:
+
+        validated_percentage = 0
+        pending_percentage = 0
+        failed_percentage = 0
+        duplicate_percentage = 0
+
+    # --------------------------------------------------------
+    # LAST 7 DAYS GRAPH
+    # --------------------------------------------------------
+
+    from datetime import datetime, timedelta, timezone
+
+    now = datetime.now(timezone.utc)
+
+    trend = []
+
+    for days_ago in range(6, -1, -1):
+
+        day_start = (
+            now - timedelta(days=days_ago)
+        ).replace(
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
+
+        day_end = day_start + timedelta(days=1)
+
+        date_filter = {
+            "created_at": {
+                "$gte": day_start,
+                "$lt": day_end,
+            }
+        }
+
+        uploaded = db.documents.count_documents(
+            {
+                **document_query,
+                **date_filter,
+            }
+        )
+
+        processed = db.documents.count_documents(
+            {
+                **document_query,
+                "status": DocumentStatus.processed.value,
+                **date_filter,
+            }
+        )
+
+        validated = db.verification_tasks.count_documents(
+            {
+                **task_query,
+                "status": "verified",
+                "updated_at": {
+                    "$gte": day_start,
+                    "$lt": day_end,
+                },
+            }
+        )
+
+        trend.append(
+            {
+                "day": day_start.strftime(
+                    "%b %d"
+                ),
+                "uploaded": uploaded,
+                "processed": processed,
+                "validated": validated,
+            }
+        )
+
+    # --------------------------------------------------------
+    # RESPONSE
+    # --------------------------------------------------------
 
     return {
         "officer_name": current_user.name,
         "tehsil_code": tehsil_code,
-        "total_documents": total_documents,
-        "processed_documents": processed_documents,
-        "failed_documents": failed_documents,
-        "pending_verification_tasks": pending_tasks,
-        "verified_documents": verified_tasks,
-        "approved_master_records": master_records,
+
+        "stats": {
+            "total_documents": total_documents,
+            "processed_documents": processed_documents,
+            "processing_documents": processing_documents,
+            "failed_documents": failed_documents,
+            "pending_verification": pending_verification,
+            "verified_documents": verified_documents,
+            "approved_master_records": approved_master_records,
+            "rejected_documents": rejected_documents,
+        },
+
+        "validation": {
+            "validated": validated_percentage,
+            "pending": pending_percentage,
+            "failed": failed_percentage,
+            "duplicate": duplicate_percentage,
+        },
+
+        "trend": trend,
+
         "status": "ready",
     }
 
@@ -574,9 +844,7 @@ def get_verification_record(
     summary="Validate and Approve Master Land Record",
     dependencies=[
         Depends(
-            require_roles(
-                ["tehsil_officer", "super_admin"]
-            )
+            require_permission("APPROVE_RECORD")
         )
     ],
 )
@@ -1117,9 +1385,7 @@ def approve_master_record(
     summary="View Master Land Records",
     dependencies=[
         Depends(
-            require_roles(
-                ["tehsil_officer", "super_admin"]
-            )
+            require_permission("VIEW_RECORD")
         )
     ],
 )

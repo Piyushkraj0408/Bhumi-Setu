@@ -263,14 +263,26 @@ def upload_document(
     }
 
     # --------------------------------------------------------
-    # 10. Create document object
+    # 10. Create document object with jurisdiction scopes
     # --------------------------------------------------------
+
+    uploader_doc = db.users.find_one({"$or": [{"_id": str(uploader_id)}, {"id": str(uploader_id)}]}) or {}
+    up_ra = uploader_doc.get("role_assignments", [{}])[0] if uploader_doc.get("role_assignments") else {}
+
+    doc_state_id = scope_id if scope_type == "state" else (uploader_doc.get("state_id") or (up_ra.get("scope_id") if up_ra.get("scope_type") == "state" else None))
+    doc_district_id = scope_id if scope_type == "district" else (uploader_doc.get("district_id") or (up_ra.get("scope_id") if up_ra.get("scope_type") == "district" else None))
+    doc_tehsil_id = scope_id if scope_type == "tehsil" else (uploader_doc.get("tehsil_id") or (up_ra.get("scope_id") if up_ra.get("scope_type") == "tehsil" else None))
 
     document_doc = {
         "_id": document_id,
         "id": document_id,
 
         "uploader_id": str(uploader_id),
+        "created_by": str(uploader_id),
+        "assigned_to_user_id": None,
+        "state_id": doc_state_id,
+        "district_id": doc_district_id,
+        "tehsil_id": doc_tehsil_id,
 
         "original_filename": safe_filename,
 

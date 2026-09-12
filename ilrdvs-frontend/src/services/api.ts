@@ -34,16 +34,29 @@ export function simulateLatency<T>(data: T, ms = 450): Promise<T> {
 let _isRefreshing = false;
 let _refreshQueue: Array<(ok: boolean) => void> = [];
 
+function _redirectToLogin() {
+  tokenStore.clear();
+  if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+    window.location.href = "/login";
+  }
+}
+
 async function _doRefresh(): Promise<boolean> {
   const refreshToken = tokenStore.getRefresh();
-  if (!refreshToken) return false;
+  if (!refreshToken) {
+    _redirectToLogin();
+    return false;
+  }
   try {
     const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh_token: refreshToken }),
     });
-    if (!res.ok) return false;
+    if (!res.ok) {
+      _redirectToLogin();
+      return false;
+    }
     const data = (await res.json()) as {
       access_token: string;
       refresh_token: string;
@@ -51,6 +64,7 @@ async function _doRefresh(): Promise<boolean> {
     tokenStore.set(data.access_token, data.refresh_token);
     return true;
   } catch {
+    _redirectToLogin();
     return false;
   }
 }
@@ -111,15 +125,14 @@ export async function apiFetch<T = unknown>(
 
   let response = await doFetch();
 
-  // Silent token refresh on first 401
-  if (response.status === 401) {
+  // Silent token refresh on 401 for protected endpoints
+  if (response.status === 401 && !path.includes("/auth/login") && !path.includes("/auth/refresh")) {
     const refreshed = await _ensureRefreshed();
     if (refreshed) {
       response = await doFetch();
     } else {
-      tokenStore.clear();
-      window.location.href = "/login";
-      throw new ApiError("Session expired. Please sign in again.", 401);
+      _redirectToLogin();
+      throw new ApiError("Session expired. Please log in again.", 401);
     }
   }
 

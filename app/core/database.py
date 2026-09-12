@@ -14,16 +14,18 @@ def get_mongo_client() -> MongoClient:
     if _mongo_client is None:
         try:
             client_kwargs = {
-                "serverSelectionTimeoutMS": 20000,
-                "connectTimeoutMS": 20000,
-                "socketTimeoutMS": 20000,
+                "serverSelectionTimeoutMS": 3000,
+                "connectTimeoutMS": 3000,
+                "socketTimeoutMS": 3000,
                 "retryWrites": True,
             }
-            # Use certifi CA file on Windows to prevent TLS handshake drop
-            try:
-                client_kwargs["tlsCAFile"] = certifi.where()
-            except Exception:
-                pass
+            # Only use certifi CA file when TLS/SSL is enabled in the URI (e.g. Atlas or HTTPS)
+            uri_lower = settings.mongodb_uri.lower()
+            if "tls=true" in uri_lower or "ssl=true" in uri_lower or "mongodb+srv" in uri_lower:
+                try:
+                    client_kwargs["tlsCAFile"] = certifi.where()
+                except Exception:
+                    pass
 
             _mongo_client = MongoClient(settings.mongodb_uri, **client_kwargs)
         except Exception as e:
@@ -71,6 +73,23 @@ def init_db():
         db.processing_jobs.create_index([("status", ASCENDING)])
         db.audit_logs.create_index([("created_at", ASCENDING)])
 
+        # Transaction collection (using existing collection 'transaction')
+        db.transaction.create_index([("transaction_id", ASCENDING)], unique=True)
+        db.transaction.create_index([("original_khasra_number", ASCENDING)])
+        db.transaction.create_index([("parent_khasra_no", ASCENDING)])
+        db.transaction.create_index([("child_khasra_numbers", ASCENDING)])
+        db.transaction.create_index([("seller_id", ASCENDING)])
+        db.transaction.create_index([("buyer_id", ASCENDING)])
+        db.transaction.create_index([("transaction_year", ASCENDING)])
+        db.transaction.create_index([("transaction_date", ASCENDING)])
+        db.transaction.create_index([("status", ASCENDING)])
+
+        # Master Records collection
+        db.master_records.create_index([("khasra_number", ASCENDING)])
+        db.master_records.create_index([("parent_khasra_no", ASCENDING)])
+        db.master_records.create_index([("owner_id", ASCENDING)])
+
         logger.info("MongoDB schema and indexes initialized successfully.")
     except Exception as e:
         logger.warning(f"MongoDB initialization warning: {e}")
+

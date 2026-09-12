@@ -1,8 +1,0 @@
-ocr:
-  engine: tesseract
-  languages: eng+hin
-  review_threshold: 0.70
-  accept_threshold: 0.90
-processing:
-  dpi: 300
-  max_pages: 200

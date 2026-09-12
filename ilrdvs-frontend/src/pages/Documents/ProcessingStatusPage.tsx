@@ -11,14 +11,20 @@ import { cn } from "../../lib/cn";
 import { formatDateTime } from "../../utils/format";
 
 export function ProcessingStatusPage() {
-  const { id = "DOC-2024-1004" } = useParams();
+  const { id } = useParams();
   const [doc, setDoc] = useState<LandDocument | null | undefined>(undefined);
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!id) return;
     setDoc(undefined);
     getDocumentById(id).then((d) => setDoc(d ?? null));
   }, [id]);
+
+  if (!id) {
+    navigate("/documents/processing", { replace: true });
+    return null;
+  }
 
   if (doc === undefined) return <div className="text-sm text-slate-400 p-10 text-center">Loading processing pipeline…</div>;
   if (!doc) return <div className="text-sm text-slate-400 p-10 text-center">Document not found.</div>;

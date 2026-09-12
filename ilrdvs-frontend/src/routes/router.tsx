@@ -1,18 +1,25 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { AppShell } from "../components/layout/AppShell";
 import { LoginPage } from "../pages/Login/LoginPage";
+import { SignupPage } from "../pages/Signup/SignupPage";
 import { DashboardPage } from "../pages/Dashboard/DashboardPage";
 import { DocumentUploadPage } from "../pages/Documents/DocumentUploadPage";
 import { DocumentManagementPage } from "../pages/Documents/DocumentManagementPage";
 import { DocumentDetailsPage } from "../pages/Documents/DocumentDetailsPage";
 import { ProcessingStatusPage } from "../pages/Documents/ProcessingStatusPage";
+import { ProcessingLandingPage } from "../pages/Documents/ProcessingLandingPage";
+import { AiProcessingLanding } from "../pages/Documents/AiProcessingLanding";
 import { OcrViewerPage } from "../pages/Documents/OcrViewerPage";
 import { ExtractionViewerPage } from "../pages/Documents/ExtractionViewerPage";
+import { TehsilReviewPage } from "../pages/Documents/TehsilReviewPage";
 import { ValidationResultsPage } from "../pages/Documents/ValidationResultsPage";
 import { VerificationQueuePage } from "../pages/Verification/VerificationQueuePage";
 import { VerificationWorkspacePage } from "../pages/Verification/VerificationWorkspacePage";
+import { MyTasksPage } from "../pages/Verification/MyTasksPage";
+import { CompletedVerificationsPage } from "../pages/Verification/CompletedVerificationsPage";
 import { RecordSearchPage } from "../pages/Records/RecordSearchPage";
 import { RecordDetailsPage } from "../pages/Records/RecordDetailsPage";
+import { PublicSearchPage } from "../pages/Records/PublicSearchPage";
 import { GisMapPage } from "../pages/GIS/GisMapPage";
 import { AnalyticsPage } from "../pages/Analytics/AnalyticsPage";
 import { AuditTrailPage } from "../pages/Audit/AuditTrailPage";
@@ -24,6 +31,11 @@ const bc = (items: Array<{ label: string; to?: string }>) => ({ handle: { breadc
 export const router = createBrowserRouter([
   { path: "/", element: <Navigate to="/login" replace /> },
   { path: "/login", element: <LoginPage /> },
+  { path: "/signup", element: <SignupPage /> },
+
+  // ── Public citizen portal (no AppShell/auth required) ──
+  { path: "/public/search", element: <PublicSearchPage /> },
+
   {
     element: <AppShell />,
     children: [
@@ -31,13 +43,21 @@ export const router = createBrowserRouter([
 
       { path: "/documents/upload", element: <DocumentUploadPage />, ...bc([{ label: "Documents", to: "/documents" }, { label: "Upload" }]) },
       { path: "/documents", element: <DocumentManagementPage />, ...bc([{ label: "Documents" }]) },
+      { path: "/documents/processing", element: <ProcessingLandingPage />, ...bc([{ label: "Documents", to: "/documents" }, { label: "Processing" }]) },
       { path: "/documents/processing/:id", element: <ProcessingStatusPage />, ...bc([{ label: "Documents", to: "/documents" }, { label: "Processing" }]) },
+      { path: "/ai/ocr", element: <AiProcessingLanding step="ocr" />, ...bc([{ label: "AI Processing" }, { label: "OCR / HTR" }]) },
+      { path: "/ai/extraction", element: <AiProcessingLanding step="extraction" />, ...bc([{ label: "AI Processing" }, { label: "Extraction" }]) },
+      { path: "/ai/validation", element: <AiProcessingLanding step="validation" />, ...bc([{ label: "AI Processing" }, { label: "Validation" }]) },
       { path: "/documents/:id/ocr", element: <OcrViewerPage />, ...bc([{ label: "AI Processing" }, { label: "OCR / HTR" }]) },
       { path: "/documents/:id/extraction", element: <ExtractionViewerPage />, ...bc([{ label: "AI Processing" }, { label: "Extraction" }]) },
+      // ── NEW: Tehsil Officer conflict resolution ──
+      { path: "/documents/:id/tehsil-review", element: <TehsilReviewPage />, ...bc([{ label: "AI Processing" }, { label: "Tehsil Review" }]) },
       { path: "/documents/:id/validation", element: <ValidationResultsPage />, ...bc([{ label: "AI Processing" }, { label: "Validation" }]) },
       { path: "/documents/:id", element: <DocumentDetailsPage />, ...bc([{ label: "Documents", to: "/documents" }, { label: "Details" }]) },
 
       { path: "/verification", element: <VerificationQueuePage />, ...bc([{ label: "Verification", to: "/verification" }, { label: "Queue" }]) },
+      { path: "/verification/my-tasks", element: <MyTasksPage />, ...bc([{ label: "Verification", to: "/verification" }, { label: "My Tasks" }]) },
+      { path: "/verification/completed", element: <CompletedVerificationsPage />, ...bc([{ label: "Verification", to: "/verification" }, { label: "Completed" }]) },
       { path: "/verification/:id", element: <VerificationWorkspacePage />, ...bc([{ label: "Verification", to: "/verification" }, { label: "Workspace" }]) },
 
       { path: "/records", element: <RecordSearchPage />, ...bc([{ label: "Land Records" }, { label: "Search" }]) },

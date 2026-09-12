@@ -1,2 +1,0 @@
-paddleocr>=3.0,<4
-# Install a compatible PaddlePaddle CPU/GPU runtime separately.

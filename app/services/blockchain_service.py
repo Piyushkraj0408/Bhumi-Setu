@@ -148,6 +148,32 @@ def create_block(
     return block
 
 
+
+# ============================================================
+# RECORD NUMBER
+# ============================================================
+
+def generate_record_number(db: Database) -> str:
+    """
+    Generate a sequential, human-readable public record number.
+    Format: BHU-<YYYY>-<5-digit-sequence>
+    Example: BHU-2026-00001
+    """
+    year = datetime.now(timezone.utc).year
+    # Count existing records this year to get the sequence
+    count = db.blockchain_transactions.count_documents(
+        {
+            "action": "MASTER_RECORD_CREATED",
+            "timestamp": {
+                "$gte": datetime(year, 1, 1, tzinfo=timezone.utc),
+                "$lt": datetime(year + 1, 1, 1, tzinfo=timezone.utc),
+            },
+        }
+    )
+    sequence = count + 1
+    return f"BHU-{year}-{sequence:05d}"
+
+
 # ============================================================
 # ANCHOR MASTER RECORD
 # ============================================================
@@ -159,11 +185,11 @@ def anchor_master_record(
     approved_by_name: str | None = None,
 ) -> dict[str, Any]:
 
-    record_hash = calculate_record_hash(
-        master_record
-    )
-
+    record_hash = calculate_record_hash(master_record)
     transaction_id = str(uuid.uuid4())
+
+    # Generate the public-facing record number BEFORE inserting
+    record_number = generate_record_number(db)
 
     transaction = {
         "transaction_id": transaction_id,
@@ -171,18 +197,16 @@ def anchor_master_record(
         "document_id": master_record.get("document_id"),
         "action": "MASTER_RECORD_CREATED",
         "record_hash": record_hash,
+        "record_number": record_number,
         "approved_by": approved_by,
         "approved_by_name": approved_by_name,
         "approved_by_role": "tehsil_officer",
         "timestamp": datetime.now(timezone.utc),
     }
 
-    block = create_block(
-        db,
-        transaction,
-    )
+    block = create_block(db, transaction)
 
-    # Store transaction separately for easy searching.
+    # Store transaction separately for easy searching
     db.blockchain_transactions.insert_one(
         {
             **transaction,
@@ -191,13 +215,21 @@ def anchor_master_record(
         }
     )
 
+    # Persist the record number on the master record itself
+    db.master_records.update_one(
+        {"record_id": master_record["record_id"]},
+        {"$set": {"record_number": record_number}},
+    )
+
     return {
         "transaction_id": transaction_id,
         "block_number": block["block_number"],
         "block_hash": block["block_hash"],
         "record_hash": record_hash,
+        "record_number": record_number,
         "action": "MASTER_RECORD_CREATED",
     }
+
 
 
 # ============================================================

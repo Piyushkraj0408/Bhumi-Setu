@@ -1,10 +1,19 @@
 """Run once against a fresh MongoDB database: python -m scripts.seed_roles
-
 Creates the base roles/permissions and grants them per the hierarchy.
 Seeds default test users for all 6 administration roles.
 """
 
+import os
 import sys
+
+# Ensure project root is on sys.path when executed directly
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 from pymongo.errors import OperationFailure, ServerSelectionTimeoutError
 from app.core.config import settings
 from app.core.database import get_mongo_database, init_db
@@ -37,9 +46,11 @@ ROLE_PERMISSIONS = {
     ],
     "verification_officer": ["VIEW_RECORD", "VERIFY_RECORD"],
     "auditor": ["VIEW_RECORD", "VIEW_AUDIT", "EXPORT_DATA"],
+    "citizen": ["VIEW_RECORD"],
 }
 
 DEFAULT_TEST_USERS = [
+    ("citizen@gov.in", "Citizen123!", "Ramesh Patil (Land Owner)", "citizen", None, None),
     ("superadmin@gov.in", "AdminPassword123!", "Super Administrator", "super_admin", None, None),
     ("stateadmin@gov.in", "StateAdmin123!", "State Land Director", "state_admin", "state", "ST-MAHA"),
     ("districtadmin@gov.in", "DistrictAdmin123!", "District Collector Pune", "district_admin", "district", "D-PUNE"),
@@ -47,6 +58,8 @@ DEFAULT_TEST_USERS = [
     ("verifier@gov.in", "Verifier123!", "Land Record Verifier", "verification_officer", "tehsil", "TH-HAVELI"),
     ("auditor@gov.in", "Auditor123!", "Vigilance Auditor", "auditor", None, None),
 ]
+
+SAMPLE_MASTER_RECORDS: list[dict] = []
 
 
 def seed():
@@ -97,7 +110,22 @@ def seed():
             else:
                 print(f" -> User exists: {email}")
 
-        print("\nSUCCESS: MongoDB Database Seeded Successfully!")
+        if SAMPLE_MASTER_RECORDS:
+            print("\n[5/5] Seeding verified master land records...")
+            from datetime import datetime, timezone
+            now_dt = datetime.now(timezone.utc)
+            for r in SAMPLE_MASTER_RECORDS:
+                r_doc = r.copy()
+                r_doc["created_at"] = now_dt
+                r_doc["last_updated"] = now_dt
+                db.master_records.update_one(
+                    {"record_id": r["record_id"]},
+                    {"$set": r_doc},
+                    upsert=True,
+                )
+                print(f" -> Master record synced: {r['record_id']} (Khasra {r['khasra_number']} - {r['owner_name']})")
+
+        print("\nSUCCESS: MongoDB Database Seeded Successfully (Roles & Permissions)!")
 
     except OperationFailure as e:
         print(f"\n[ERROR] MongoDB Authentication Failed: {e.details.get('errmsg', str(e))}")

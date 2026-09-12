@@ -1,9 +1,12 @@
 import uuid
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pymongo.database import Database
 
 from app.core.database import get_db
-from app.api.deps import get_current_user, require_permission
+from app.core.permissions import require_permission
+from app.core.scope import build_scoped_id_query, merge_scope_filter
+from app.api.deps import get_current_user
 from app.models.mongo_models import MongoUser, DocumentStatus
 from app.schemas.document import (
     DocumentOut,
@@ -61,7 +64,11 @@ def upload_document(
     )
 
 
-@router.get("", response_model=list[DocumentOut])
+@router.get(
+    "",
+    response_model=list[DocumentOut],
+    dependencies=[Depends(require_permission("VIEW_RECORD"))],
+)
 def list_documents(
     status_filter: str | None = None,
     scope_id: str | None = None,
@@ -70,13 +77,16 @@ def list_documents(
     db: Database = Depends(get_db),
     current_user: MongoUser = Depends(get_current_user),
 ):
-    query = {"status": {"$ne": DocumentStatus.deleted.value}}
+    base_query: dict = {"status": {"$ne": DocumentStatus.deleted.value}}
     if status_filter:
-        query["status"] = status_filter
+        base_query["status"] = status_filter
     if scope_id:
-        query["scope_id"] = scope_id
+        base_query["scope_id"] = scope_id
 
-    docs = list(db.documents.find(query).skip(skip).limit(limit))
+    # Enforce data scoping at query layer
+    scoped_query = merge_scope_filter(base_query, current_user)
+
+    docs = list(db.documents.find(scoped_query).skip(skip).limit(limit))
     return [
         DocumentOut(
             id=uuid.UUID(str(d.get("_id", d.get("id")))),
@@ -93,14 +103,22 @@ def list_documents(
     ]
 
 
-@router.get("/{document_id}", response_model=DocumentOut)
+@router.get(
+    "/{document_id}",
+    response_model=DocumentOut,
+    dependencies=[Depends(require_permission("VIEW_RECORD"))],
+)
 def get_document(
     document_id: uuid.UUID,
     db: Database = Depends(get_db),
     current_user: MongoUser = Depends(get_current_user),
 ):
     doc_id_str = str(document_id)
-    d = db.documents.find_one({"_id": doc_id_str, "status": {"$ne": DocumentStatus.deleted.value}})
+    # Anti-IDOR: Scoped query ensures record exists AND is within user jurisdiction
+    scoped_query = build_scoped_id_query(
+        doc_id_str, current_user, {"status": {"$ne": DocumentStatus.deleted.value}}
+    )
+    d = db.documents.find_one(scoped_query)
     if not d:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
@@ -118,14 +136,42 @@ def get_document(
     )
 
 
-@router.get("/{document_id}/versions", response_model=list[DocumentVersionOut])
+@router.get(
+    "/{document_id}/ocr",
+    dependencies=[Depends(require_permission("VIEW_RECORD"))],
+)
+def get_document_ocr(
+    document_id: uuid.UUID,
+    db: Database = Depends(get_db),
+    current_user: MongoUser = Depends(get_current_user),
+):
+    doc_id_str = str(document_id)
+    scoped_query = build_scoped_id_query(doc_id_str, current_user)
+    doc = db.documents.find_one(scoped_query)
+    if not doc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Document not found")
+
+    return {
+        "document_id": doc_id_str,
+        "status": doc.get("status"),
+        "ocr": doc.get("ocr") or {},
+        "metadata": doc.get("metadata") or {},
+    }
+
+
+@router.get(
+    "/{document_id}/versions",
+    response_model=list[DocumentVersionOut],
+    dependencies=[Depends(require_permission("VIEW_RECORD"))],
+)
 def list_versions(
     document_id: uuid.UUID,
     db: Database = Depends(get_db),
     current_user: MongoUser = Depends(get_current_user),
 ):
     doc_id_str = str(document_id)
-    doc = db.documents.find_one({"$or": [{"_id": doc_id_str}, {"id": doc_id_str}]})
+    scoped_query = build_scoped_id_query(doc_id_str, current_user)
+    doc = db.documents.find_one(scoped_query)
     if not doc:
         return []
     versions = doc.get("versions", [])
@@ -139,7 +185,10 @@ def list_versions(
     ]
 
 
-@router.get("/{document_id}/download")
+@router.get(
+    "/{document_id}/download",
+    dependencies=[Depends(require_permission("VIEW_RECORD"))],
+)
 def download_document(
     document_id: uuid.UUID,
     version_type: str | None = None,
@@ -147,8 +196,11 @@ def download_document(
     current_user: MongoUser = Depends(get_current_user),
 ):
     doc_id_str = str(document_id)
-    document = db.documents.find_one({"$or": [{"_id": doc_id_str}, {"id": doc_id_str}]})
-    if not document or document.get("status") == DocumentStatus.deleted.value:
+    scoped_query = build_scoped_id_query(
+        doc_id_str, current_user, {"status": {"$ne": DocumentStatus.deleted.value}}
+    )
+    document = db.documents.find_one(scoped_query)
+    if not document:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Document not found")
 
     storage_key = document.get("storage_key")
@@ -163,24 +215,30 @@ def download_document(
     return {"download_url": url, "expires_in_seconds": 900}
 
 
-@router.get("/{document_id}/jobs/{job_id}/status", response_model=ProcessingJobOut)
+@router.get(
+    "/{document_id}/jobs/{job_id}/status",
+    response_model=ProcessingJobOut,
+    dependencies=[Depends(require_permission("VIEW_RECORD"))],
+)
 def get_job_status(
     document_id: uuid.UUID,
     job_id: uuid.UUID,
     db: Database = Depends(get_db),
     current_user: MongoUser = Depends(get_current_user),
 ):
-    job_id_str = str(job_id)
     doc_id_str = str(document_id)
+    job_id_str = str(job_id)
+    scoped_query = build_scoped_id_query(doc_id_str, current_user)
+    doc = db.documents.find_one(scoped_query)
+    if not doc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Document not found")
+
     job = db.processing_jobs.find_one({"id": job_id_str, "document_id": doc_id_str})
     if not job:
-        # Check inside document's jobs
-        doc = db.documents.find_one({"$or": [{"_id": doc_id_str}, {"id": doc_id_str}]})
-        if doc:
-            for j in doc.get("jobs", []):
-                if j.get("id") == job_id_str:
-                    job = j
-                    break
+        for j in doc.get("jobs", []):
+            if j.get("id") == job_id_str:
+                job = j
+                break
     if not job:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Job not found")
 
@@ -205,7 +263,24 @@ def delete_document(
     current_user: MongoUser = Depends(get_current_user),
 ):
     doc_id_str = str(document_id)
-    doc = db.documents.find_one({"$or": [{"_id": doc_id_str}, {"id": doc_id_str}]})
+    scoped_query = build_scoped_id_query(doc_id_str, current_user)
+    doc = db.documents.find_one(scoped_query)
     if not doc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Document not found")
+    
     document_service.soft_delete_document(db, doc_id_str)
+
+    # Record Audit Log
+    now = datetime.now(timezone.utc)
+    db.audit_logs.insert_one({
+        "event_id": f"EVT-DEL-{uuid.uuid4()}",
+        "user_id": str(current_user.id),
+        "user_email": current_user.email,
+        "role": current_user.role,
+        "action": "EDIT_RECORD",
+        "sub_action": "DELETE_DOCUMENT",
+        "record_id": doc_id_str,
+        "document_id": doc_id_str,
+        "timestamp": now,
+    })
+

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Cpu, ScanText, Sparkles, ShieldCheck } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Card, CardHeader, CardBody } from "../../components/ui/Card";
 import { DocumentViewer } from "../../components/documents/DocumentViewer";
 import { Button } from "../../components/ui/Button";
@@ -12,6 +13,7 @@ import type { LandDocument, AuditEntry } from "../../types";
 import { formatDate, formatFileSize, formatDateTime } from "../../utils/format";
 
 export function DocumentDetailsPage() {
+  const { t } = useTranslation();
   const { id = "DOC-2024-1004" } = useParams();
   const [doc, setDoc] = useState<LandDocument | null | undefined>(undefined);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
@@ -23,8 +25,8 @@ export function DocumentDetailsPage() {
     listAuditLog(id).then((a) => setAudit(a.length ? a : []));
   }, [id]);
 
-  if (doc === undefined) return <div className="text-sm text-slate-400 p-10 text-center">Loading document…</div>;
-  if (!doc) return <div className="text-sm text-slate-400 p-10 text-center">Document not found.</div>;
+  if (doc === undefined) return <div className="text-sm text-slate-400 p-10 text-center">{t("common.loading", "Loading document…")}</div>;
+  if (!doc) return <div className="text-sm text-slate-400 p-10 text-center">{t("documents.notFound", "Document not found.")}</div>;
 
   return (
     <div className="space-y-5">
@@ -34,16 +36,16 @@ export function DocumentDetailsPage() {
           <p className="text-sm text-slate-500 mt-0.5">{doc.fileName}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" icon={<ScanText className="h-3.5 w-3.5" />} onClick={() => navigate(`/documents/${doc.id}/ocr`)}>OCR Viewer</Button>
-          <Button variant="outline" size="sm" icon={<Sparkles className="h-3.5 w-3.5" />} onClick={() => navigate(`/documents/${doc.id}/extraction`)}>Extraction</Button>
-          <Button variant="outline" size="sm" icon={<ShieldCheck className="h-3.5 w-3.5" />} onClick={() => navigate(`/documents/${doc.id}/validation`)}>Validation</Button>
-          <Button size="sm" icon={<Cpu className="h-3.5 w-3.5" />} onClick={() => navigate(`/documents/processing/${doc.id}`)}>Processing</Button>
+          <Button variant="outline" size="sm" icon={<ScanText className="h-3.5 w-3.5" />} onClick={() => navigate(`/documents/${doc.id}/ocr`)}>{t("nav.ocr", "OCR Viewer")}</Button>
+          <Button variant="outline" size="sm" icon={<Sparkles className="h-3.5 w-3.5" />} onClick={() => navigate(`/documents/${doc.id}/extraction`)}>{t("nav.extraction", "Extraction")}</Button>
+          <Button variant="outline" size="sm" icon={<ShieldCheck className="h-3.5 w-3.5" />} onClick={() => navigate(`/documents/${doc.id}/validation`)}>{t("nav.validation", "Validation")}</Button>
+          <Button size="sm" icon={<Cpu className="h-3.5 w-3.5" />} onClick={() => navigate(`/documents/processing/${doc.id}`)}>{t("nav.processing", "Processing")}</Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <Card className="lg:col-span-2 h-[480px] flex flex-col">
-          <CardHeader title="Document Preview" />
+          <CardHeader title={t("documents.preview", "Document Preview")} />
           <div className="flex-1 p-4">
             <DocumentViewer pages={doc.pages} />
           </div>
@@ -51,34 +53,34 @@ export function DocumentDetailsPage() {
 
         <div className="space-y-5">
           <Card>
-            <CardHeader title="Metadata" />
+            <CardHeader title={t("documents.metadata", "Metadata")} />
             <CardBody className="grid grid-cols-2 gap-4 text-sm">
-              <Field label="Document ID" value={doc.id} />
-              <Field label="Pages" value={String(doc.pages)} />
-              <Field label="File Size" value={formatFileSize(doc.fileSizeKb)} />
-              <Field label="File Type" value={doc.fileType} />
-              <Field label="Uploaded" value={formatDate(doc.uploadDate)} />
-              <Field label="Uploaded By" value={doc.uploadedBy} />
-              <Field label="Record Type" value={doc.documentType} />
-              <Field label="Language" value={doc.language} />
-              <Field label="Village" value={doc.location.village} />
-              <Field label="District" value={doc.location.district} />
+              <Field label={t("table.documentId", "Document ID")} value={doc.id} />
+              <Field label={t("documents.pages", "Pages")} value={String(doc.pages)} />
+              <Field label={t("documents.fileSize", "File Size")} value={formatFileSize(doc.fileSizeKb)} />
+              <Field label={t("documents.fileType", "File Type")} value={doc.fileType} />
+              <Field label={t("table.uploadDate", "Uploaded")} value={formatDate(doc.uploadDate)} />
+              <Field label={t("table.uploadedBy", "Uploaded By")} value={doc.uploadedBy} />
+              <Field label={t("table.recordType", "Record Type")} value={doc.documentType} />
+              <Field label={t("documents.language", "Language")} value={doc.language} />
+              <Field label={t("records.village", "Village")} value={doc.location.village} />
+              <Field label={t("records.district", "District")} value={doc.location.district} />
             </CardBody>
           </Card>
 
           <Card>
-            <CardHeader title="Status" />
+            <CardHeader title={t("table.status", "Status")} />
             <CardBody className="space-y-3">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500">Processing</span>
+                <span className="text-slate-500">{t("nav.processing", "Processing")}</span>
                 <ProcessingStatusBadge status={doc.processingStatus} />
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500">Validation</span>
+                <span className="text-slate-500">{t("nav.validation", "Validation")}</span>
                 <ValidationStatusBadge status={doc.validationStatus} />
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500">Verification</span>
+                <span className="text-slate-500">{t("nav.verification", "Verification")}</span>
                 <VerificationStatusBadge status={doc.verificationStatus} />
               </div>
               <div className="flex justify-center pt-2 border-t border-slate-100">
@@ -90,10 +92,10 @@ export function DocumentDetailsPage() {
       </div>
 
       <Card>
-        <CardHeader title="Audit History" />
+        <CardHeader title={t("nav.auditTrail", "Audit History")} />
         <CardBody>
           {audit.length === 0 ? (
-            <p className="text-sm text-slate-400 text-center py-4">No audit entries recorded for this document yet.</p>
+            <p className="text-sm text-slate-400 text-center py-4">{t("audit.noLogs", "No audit entries recorded for this document yet.")}</p>
           ) : (
             <div className="divide-y divide-slate-50">
               {audit.map((a) => (
