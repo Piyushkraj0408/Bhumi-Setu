@@ -14,8 +14,8 @@ export function KPICard({
 }: {
   label: string;
   value: number;
-  changePct: number;
-  trend: "up" | "down";
+  changePct?: number;
+trend?: "up" | "down";
   context: string;
   icon: ReactNode;
   tone?: "brand" | "success" | "warning" | "danger";

@@ -20,7 +20,6 @@ import { ConfidenceRing } from "../../components/ui/Confidence";
 import {
   getExtractionResult,
   approveExtraction,
-  isConflictDocument,
 } from "../../services/extraction.service";
 import { getDocumentById } from "../../services/document.service";
 import type { ExtractedField, LandDocument } from "../../types";
